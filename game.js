@@ -19,7 +19,12 @@ const explosionDuration = 20;
 // logical game dimensions
 const GAME_W = 500, GAME_H = 600;
 
-// ==== MYSTERY SHIP & UFO SOUND STATE ====
+// multi-touch tracking
+let steerTouchId = null;
+let fireTouchId  = null;
+function clamp(v, min, max) { return v < min ? min : v > max ? max : v; }
+
+// ==== MYSTERY SHIP & UFO STATE ====
 let mysteryShip, mysteryTimer, ufoOsc, ufoGain;
 function getRandomMysteryFrames() {
   return Math.floor((20 + Math.random()*20) * 60);
@@ -30,9 +35,9 @@ function playGameOverMelody() {
   if (audioCtx.state === "suspended") audioCtx.resume();
   const now = audioCtx.currentTime;
   const notes = [
-    { f:523.25, t:0.00, d:0.15 },  // C5
-    { f:440.00, t:0.15, d:0.15 },  // A4
-    { f:349.23, t:0.30, d:0.30 }   // F4
+    { f:523.25, t:0.00, d:0.15 },
+    { f:440.00, t:0.15, d:0.15 },
+    { f:349.23, t:0.30, d:0.30 }
   ];
   const g = audioCtx.createGain();
   g.gain.setValueAtTime(0.4, now);
@@ -100,41 +105,43 @@ function unlockAudio() {
   window.addEventListener(evt, unlockAudio)
 );
 
-// ==== TOUCH STEERING & CONDITIONAL SHOOTING ====
+// ==== MULTI-TOUCH STEERING & CONDITIONAL SHOOTING ====
 canvas.addEventListener("touchstart", e => {
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
-  const t = e.touches[0];
-  const tx = (t.clientX - rect.left) * (canvas.width  / rect.width);
-  const ty = (t.clientY - rect.top)  * (canvas.height / rect.height);
-
-  // steer ship
-  player.x = Math.min(
-    Math.max(tx - player.width/2, 0),
-    GAME_W - player.width
-  );
-
-  // shoot only if touch is above the cannon area
-  if (ty < GAME_H - player.height - 10) {
-    shoot();
+  for (let touch of e.changedTouches) {
+    const tx = (touch.clientX - rect.left) * (canvas.width  / rect.width);
+    const ty = (touch.clientY - rect.top ) * (canvas.height / rect.height);
+    // fire if above cannon and no fireTouch assigned
+    if (ty < GAME_H - player.height - 10 && fireTouchId === null) {
+      fireTouchId = touch.identifier;
+      shoot();
+    }
+    // otherwise assign steerTouch
+    else if (steerTouchId === null) {
+      steerTouchId = touch.identifier;
+      player.x = clamp(tx - player.width/2, 0, GAME_W - player.width);
+    }
   }
 }, { passive:false });
 
 canvas.addEventListener("touchmove", e => {
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
-  const t = e.touches[0];
-  const tx = (t.clientX - rect.left) * (canvas.width  / rect.width);
-
-  player.x = Math.min(
-    Math.max(tx - player.width/2, 0),
-    GAME_W - player.width
-  );
+  for (let touch of e.changedTouches) {
+    if (touch.identifier === steerTouchId) {
+      const tx = (touch.clientX - rect.left) * (canvas.width  / rect.width);
+      player.x = clamp(tx - player.width/2, 0, GAME_W - player.width);
+    }
+  }
 }, { passive:false });
 
 canvas.addEventListener("touchend", e => {
   e.preventDefault();
-  // no continuous shoot
+  for (let touch of e.changedTouches) {
+    if (touch.identifier === steerTouchId) steerTouchId = null;
+    if (touch.identifier === fireTouchId ) fireTouchId  = null;
+  }
 }, { passive:false });
 
 // ==== MAIN MENU START BUTTON ====
@@ -219,7 +226,6 @@ function initLevel() {
   createEnemies();
   shields = createShields();
 }
-
 function createEnemies() {
   enemies = [];
   const rows = 2 + wave, cols = 6 + wave;
@@ -236,7 +242,6 @@ function createEnemies() {
     }
   }
 }
-
 function createShields() {
   const arr = [], COUNT=5, SW=60, SH=30, C=6, R=4;
   const cw = SW/C, ch = SH/R, totalW = COUNT*SW, gap = (GAME_W - totalW)/(COUNT+1);
@@ -272,13 +277,12 @@ function shoot() {
     x: player.x + player.width/2 - 2,
     y: player.y,
     width: SPRITES.bullet.w*2,
-    height:SPRITES.bullet.h*2,
+    height: SPRITES.bullet.h*2,
     speed: 7
   });
   player.cooldown = 15;
   playShootSound();
 }
-
 function enemyShoot(e) {
   enemyBullets.push({
     x: e.x + e.width/2 - 2,
@@ -286,7 +290,6 @@ function enemyShoot(e) {
     width: 4, height: 10, speed: 3
   });
 }
-
 function playShootSound() {
   if (audioCtx.state === "suspended") audioCtx.resume();
   const o = audioCtx.createOscillator(), g = audioCtx.createGain();
@@ -298,7 +301,6 @@ function playShootSound() {
   o.connect(g).connect(audioCtx.destination);
   o.start(); o.stop(audioCtx.currentTime + 0.1);
 }
-
 function playExplosionSound() {
   if (audioCtx.state === "suspended") audioCtx.resume();
   const now = audioCtx.currentTime, dur = 0.4;
@@ -317,7 +319,6 @@ function playExplosionSound() {
   src.connect(f).connect(g).connect(audioCtx.destination);
   src.start(now); src.stop(now + dur);
 }
-
 function playHitSound() {
   if (audioCtx.state === "suspended") audioCtx.resume();
   const now = audioCtx.currentTime, dur = 0.6;
@@ -336,7 +337,6 @@ function playHitSound() {
   src.connect(f).connect(g).connect(audioCtx.destination);
   src.start(now); src.stop(now + dur);
 }
-
 function addExplosion(x, y) {
   explosions.push({ x, y, frame: 0 });
   playExplosionSound();
@@ -353,7 +353,7 @@ function gameLoop() {
 function update() {
   if (paused || gameOver) return;
 
-  // mystery UFO
+  // UFO
   if (!mysteryShip) {
     mysteryTimer--;
     if (mysteryTimer <= 0) spawnMystery();
@@ -370,17 +370,17 @@ function update() {
     }
   }
 
-  // keyboard movement
-  if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
+  // movement & shooting
+  if (keys["ArrowLeft"]  && player.x > 0)                    player.x -= player.speed;
   if (keys["ArrowRight"] && player.x + player.width < GAME_W) player.x += player.speed;
   if (keys[" "]) shoot();
   if (player.cooldown > 0) player.cooldown--;
 
-  // move bullets
+  // bullets
   player.bullets.forEach((b,i) => { b.y -= b.speed; if (b.y < 0) player.bullets.splice(i,1); });
   enemyBullets.forEach((b,i) => { b.y += b.speed; if (b.y > GAME_H) enemyBullets.splice(i,1); });
 
-  // move enemies
+  // enemies
   let down = false;
   enemies.forEach(e => {
     if (!e.alive) return;
@@ -389,19 +389,19 @@ function update() {
   });
   if (down) {
     enemyDirection *= -1;
-    enemies.forEach(e=> e.y += 10);
+    enemies.forEach(e => e.y += 10);
   }
   if (Math.random() < 0.02) {
     const a = enemies.filter(e=> e.alive);
     if (a.length) enemyShoot(a[Math.floor(Math.random()*a.length)]);
   }
 
-  // update explosions
+  // explosions
   explosions.forEach((ex,i) => { if (++ex.frame > explosionDuration) explosions.splice(i,1); });
 
   handleCollisions();
 
-  // enemies reach player
+  // enemy reach
   enemies.forEach(e => {
     if (e.alive && e.y + e.height >= player.y) {
       e.alive = false;
@@ -412,21 +412,21 @@ function update() {
   // next wave
   if (enemies.every(e=>!e.alive)) {
     wave++;
-    enemySpeed = 1 + (wave - 1)*0.5;
+    enemySpeed = 1 + (wave-1)*0.5;
     initLevel();
   }
 }
 
 // ==== COLLISION HANDLING ====
 function handleCollisions() {
-  // player bullets → mystery
+  // player→mystery
   player.bullets = player.bullets.filter(b => {
     if (mysteryShip &&
         b.x < mysteryShip.x + mysteryShip.width &&
         b.x + b.width > mysteryShip.x &&
         b.y < mysteryShip.y + mysteryShip.height &&
         b.y + b.height > mysteryShip.y) {
-      const bonus = (1 + Math.floor(Math.random()*5)) * 50;
+      const bonus = (1 + Math.floor(Math.random()*5))*50;
       score += bonus;
       if (score > highscore) {
         highscore = score;
@@ -441,7 +441,7 @@ function handleCollisions() {
     return true;
   });
 
-  // player bullets → enemies
+  // player→enemies
   player.bullets = player.bullets.filter(b => {
     for (let e of enemies) {
       if (e.alive &&
@@ -460,7 +460,7 @@ function handleCollisions() {
     return true;
   });
 
-  // enemy bullets → player
+  // enemy→player
   enemyBullets = enemyBullets.filter(b => {
     if (b.x < player.x + player.width && b.x + b.width > player.x &&
         b.y < player.y + player.height && b.y + b.height > player.y) {
@@ -470,7 +470,7 @@ function handleCollisions() {
     return true;
   });
 
-  // bullets → shields
+  // bullets→shields
   player.bullets = player.bullets.filter(b => {
     for (let i=0; i<shields.length; i++) {
       const s = shields[i];
@@ -497,7 +497,7 @@ function handleCollisions() {
   });
 }
 
-// ==== DRAWING ====
+// ==== DRAW FUNCTIONS ====
 function draw() {
   if (gameOver) {
     drawGameOverText();
@@ -523,7 +523,6 @@ function draw() {
   drawExplosions();
 }
 
-// ==== DRAW HELPERS ====
 function drawPlayer() {
   const sp = SPRITES.player;
   ctx.drawImage(sprites, sp.sx,sp.sy,sp.w,sp.h,
@@ -558,7 +557,7 @@ function drawEnemies() {
 function drawPlayerBullets() {
   const sp = SPRITES.bullet;
   player.bullets.forEach(b =>
-    ctx.drawImage(sprites, sp.sx,sp.sy,sp.w,sp.h,
+    ctx.drawImage(sprites,sp.sx,sp.sy,sp.w,sp.h,
                   b.x,b.y,b.width,b.height)
   );
   ctx.fillStyle="white";
@@ -576,8 +575,8 @@ function drawExplosions() {
     const sz = ex.frame * 2;
     ctx.save();
     ctx.globalAlpha = 1 - ex.frame / explosionDuration;
-    ctx.drawImage(sprites, sp.sx,sp.sy,sp.w,sp.h,
-                  ex.x - sz/2, ex.y - sz/2, sz, sz);
+    ctx.drawImage(sprites,sp.sx,sp.sy,sp.w,sp.h,
+                  ex.x-sz/2,ex.y-sz/2,sz,sz);
     ctx.restore();
   });
 }
@@ -587,11 +586,11 @@ function drawMysteryShip() {
   const { x,y,width:w,height:h } = mysteryShip;
   ctx.fillStyle="magenta";
   ctx.beginPath();
-  ctx.ellipse(x + w/2, y + h/2 + 2, w/2, h/2.5, 0, 0,2*Math.PI);
+  ctx.ellipse(x + w/2, y + h/2 + 2, w/2, h/2.5, 0,0,2*Math.PI);
   ctx.fill();
   ctx.fillStyle="#88ffdd";
   ctx.beginPath();
-  ctx.ellipse(x + w/2, y + h/2 - 4, w/4, h/3, 0, 0,2*Math.PI);
+  ctx.ellipse(x + w/2, y + h/2 - 4, w/4, h/3, 0,0,2*Math.PI);
   ctx.fill();
   ctx.strokeStyle="black"; ctx.lineWidth=1; ctx.stroke();
 }
