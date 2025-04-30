@@ -79,9 +79,7 @@ const FRAME_W = 16, FRAME_H = 8, TYPES = 4, FRAMES = 2;
 let ENEMY_FRAMES = [];
 for (let r = 0; r < FRAMES; r++) {
   for (let c = 0; c < TYPES; c++) {
-    ENEMY_FRAMES.push({
-      sx: c*FRAME_W, sy: r*FRAME_H, w: FRAME_W, h: FRAME_H
-    });
+    ENEMY_FRAMES.push({ sx: c*FRAME_W, sy: r*FRAME_H, w: FRAME_W, h: FRAME_H });
   }
 }
 let enemyFrame = 0;
@@ -116,9 +114,9 @@ canvas.addEventListener("touchstart", e => {
     GAME_W - player.width
   );
 
-  // shoot only if tapped above the cannon area
+  // shoot only if touch is above the cannon area
   if (ty < GAME_H - player.height - 10) {
-    keys[" "] = true;
+    shoot();
   }
 }, { passive:false });
 
@@ -136,7 +134,7 @@ canvas.addEventListener("touchmove", e => {
 
 canvas.addEventListener("touchend", e => {
   e.preventDefault();
-  keys[" "] = false;
+  // no continuous shoot
 }, { passive:false });
 
 // ==== MAIN MENU START BUTTON ====
@@ -274,7 +272,7 @@ function shoot() {
     x: player.x + player.width/2 - 2,
     y: player.y,
     width: SPRITES.bullet.w*2,
-    height: SPRITES.bullet.h*2,
+    height:SPRITES.bullet.h*2,
     speed: 7
   });
   player.cooldown = 15;
@@ -308,9 +306,7 @@ function playExplosionSound() {
   const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
   const d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1)*(1 - i/len);
-  const src = audioCtx.createBufferSource(),
-        f   = audioCtx.createBiquadFilter(),
-        g   = audioCtx.createGain();
+  const src = audioCtx.createBufferSource(), f = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
   src.buffer = buf;
   f.type = "lowpass";
   f.frequency.setValueAtTime(800, now);
@@ -329,9 +325,7 @@ function playHitSound() {
   const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
   const d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1)*(1 - i/len);
-  const src = audioCtx.createBufferSource(),
-        f   = audioCtx.createBiquadFilter(),
-        g   = audioCtx.createGain();
+  const src = audioCtx.createBufferSource(), f = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
   src.buffer = buf;
   f.type = "lowpass";
   f.frequency.setValueAtTime(1200, now);
@@ -371,27 +365,27 @@ function update() {
     }
     if (mysteryShip.x > GAME_W) {
       mysteryShip = null;
-      mysteryTimer  = getRandomMysteryFrames();
+      mysteryTimer = getRandomMysteryFrames();
       if (ufoOsc) { ufoOsc.stop(); ufoOsc = null; ufoGain = null; }
     }
   }
 
   // keyboard movement
-  if (keys["ArrowLeft"]  && player.x > 0)                    player.x -= player.speed;
+  if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
   if (keys["ArrowRight"] && player.x + player.width < GAME_W) player.x += player.speed;
   if (keys[" "]) shoot();
   if (player.cooldown > 0) player.cooldown--;
 
   // move bullets
-  player.bullets.forEach((b,i)=>{ b.y -= b.speed; if (b.y < 0) player.bullets.splice(i,1); });
-  enemyBullets.forEach((b,i)=>{ b.y += b.speed; if (b.y > GAME_H) enemyBullets.splice(i,1); });
+  player.bullets.forEach((b,i) => { b.y -= b.speed; if (b.y < 0) player.bullets.splice(i,1); });
+  enemyBullets.forEach((b,i) => { b.y += b.speed; if (b.y > GAME_H) enemyBullets.splice(i,1); });
 
   // move enemies
   let down = false;
-  enemies.forEach(e=>{
-    if(!e.alive) return;
+  enemies.forEach(e => {
+    if (!e.alive) return;
     e.x += enemyDirection * enemySpeed;
-    if(e.x <= 0 || e.x + e.width >= GAME_W) down = true;
+    if (e.x <= 0 || e.x + e.width >= GAME_W) down = true;
   });
   if (down) {
     enemyDirection *= -1;
@@ -399,17 +393,17 @@ function update() {
   }
   if (Math.random() < 0.02) {
     const a = enemies.filter(e=> e.alive);
-    if(a.length) enemyShoot(a[Math.floor(Math.random()*a.length)]);
+    if (a.length) enemyShoot(a[Math.floor(Math.random()*a.length)]);
   }
 
-  // explosions
-  explosions.forEach((ex,i)=>{ if(++ex.frame > explosionDuration) explosions.splice(i,1); });
+  // update explosions
+  explosions.forEach((ex,i) => { if (++ex.frame > explosionDuration) explosions.splice(i,1); });
 
   handleCollisions();
 
-  // enemies hit player
-  enemies.forEach(e=>{
-    if(e.alive && e.y + e.height >= player.y) {
+  // enemies reach player
+  enemies.forEach(e => {
+    if (e.alive && e.y + e.height >= player.y) {
       e.alive = false;
       handlePlayerHit(e.x + e.width/2, e.y + e.height/2);
     }
@@ -418,7 +412,7 @@ function update() {
   // next wave
   if (enemies.every(e=>!e.alive)) {
     wave++;
-    enemySpeed = 1 + (wave-1)*0.5;
+    enemySpeed = 1 + (wave - 1)*0.5;
     initLevel();
   }
 }
@@ -426,13 +420,13 @@ function update() {
 // ==== COLLISION HANDLING ====
 function handleCollisions() {
   // player bullets → mystery
-  player.bullets = player.bullets.filter(b=>{
+  player.bullets = player.bullets.filter(b => {
     if (mysteryShip &&
         b.x < mysteryShip.x + mysteryShip.width &&
         b.x + b.width > mysteryShip.x &&
         b.y < mysteryShip.y + mysteryShip.height &&
         b.y + b.height > mysteryShip.y) {
-      const bonus = (1 + Math.floor(Math.random()*5))*50;
+      const bonus = (1 + Math.floor(Math.random()*5)) * 50;
       score += bonus;
       if (score > highscore) {
         highscore = score;
@@ -448,7 +442,7 @@ function handleCollisions() {
   });
 
   // player bullets → enemies
-  player.bullets = player.bullets.filter(b=>{
+  player.bullets = player.bullets.filter(b => {
     for (let e of enemies) {
       if (e.alive &&
           b.x < e.x + e.width && b.x + b.width > e.x &&
@@ -467,7 +461,7 @@ function handleCollisions() {
   });
 
   // enemy bullets → player
-  enemyBullets = enemyBullets.filter(b=>{
+  enemyBullets = enemyBullets.filter(b => {
     if (b.x < player.x + player.width && b.x + b.width > player.x &&
         b.y < player.y + player.height && b.y + b.height > player.y) {
       handlePlayerHit(player.x + player.width/2, player.y);
@@ -477,11 +471,11 @@ function handleCollisions() {
   });
 
   // bullets → shields
-  player.bullets = player.bullets.filter(b=>{
-    for(let i=0;i<shields.length;i++){
-      const c = shields[i];
-      if (b.x < c.x + c.width && b.x + b.width > c.x &&
-          b.y < c.y + c.height && b.y + b.height > c.y) {
+  player.bullets = player.bullets.filter(b => {
+    for (let i=0; i<shields.length; i++) {
+      const s = shields[i];
+      if (b.x < s.x + s.width && b.x + b.width > s.x &&
+          b.y < s.y + s.height && b.y + b.height > s.y) {
         shields.splice(i,1);
         addExplosion(b.x, b.y);
         return false;
@@ -489,11 +483,11 @@ function handleCollisions() {
     }
     return true;
   });
-  enemyBullets = enemyBullets.filter(b=>{
-    for(let i=0;i<shields.length;i++){
-      const c = shields[i];
-      if (b.x < c.x + c.width && b.x + b.width > c.x &&
-          b.y < c.y + c.height && b.y + b.height > c.y) {
+  enemyBullets = enemyBullets.filter(b => {
+    for (let i=0; i<shields.length; i++) {
+      const s = shields[i];
+      if (b.x < s.x + s.width && b.x + b.width > s.x &&
+          b.y < s.y + s.height && b.y + b.height > s.y) {
         shields.splice(i,1);
         addExplosion(b.x, b.y);
         return false;
@@ -504,18 +498,22 @@ function handleCollisions() {
 }
 
 // ==== DRAWING ====
-function draw(){
+function draw() {
   if (gameOver) {
     drawGameOverText();
     return;
   }
   ctx.clearRect(0,0,GAME_W,GAME_H);
-  ctx.fillStyle="red"; ctx.font="16px monospace"; ctx.textBaseline="top";
-  ctx.fillText(`SCORE: ${score.toString().padStart(4,"0")}`, 10, 10);
+
+  // HUD
+  ctx.fillStyle="red";
+  ctx.font="16px monospace";
+  ctx.textBaseline="top";
+  ctx.fillText(`SCORE: ${score.toString().padStart(4,"0")}`,10,10);
   const hi = `HI-SCORE: ${highscore.toString().padStart(4,"0")}`;
   const hiX = GAME_W/2 - ctx.measureText(hi).width/2;
   ctx.fillText(hi, hiX, 10);
-  ctx.fillText(`LIVES: ${lives}`, GAME_W - 100, 10);
+  ctx.fillText(`LIVES: ${lives}`, GAME_W-100,10);
 
   drawMysteryShip();
   drawEnemies();
@@ -525,80 +523,75 @@ function draw(){
   drawExplosions();
 }
 
-// ==== DRAW HELPERS ====  
-function drawPlayer(){
+// ==== DRAW HELPERS ====
+function drawPlayer() {
   const sp = SPRITES.player;
-  ctx.drawImage(sprites,
-                sp.sx, sp.sy, sp.w, sp.h,
-                player.x, player.y, player.width, player.height);
-  // cannon barrel
+  ctx.drawImage(sprites, sp.sx,sp.sy,sp.w,sp.h,
+                player.x,player.y,player.width,player.height);
+  // barrel
   const bw=6, bh=12,
-        bx=player.x + player.width/2 - bw/2,
-        by=player.y - bh + 2;
+        bx=player.x+player.width/2-bw/2,
+        by=player.y-bh+2;
   ctx.fillStyle="#888";
-  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillRect(bx,by,bw,bh);
 }
 
-function drawEnemies(){
+function drawEnemies() {
   const sp = ENEMY_FRAMES[enemyFrame];
-  enemies.forEach((e,i)=>{
+  enemies.forEach((e,i) => {
     if (!e.alive) return;
     ctx.drawImage(enemySprites,
-                  sp.sx, sp.sy, sp.w, sp.h,
-                  e.x, e.y, e.width, e.height);
-    const row = Math.floor(i / enemyCols),
+                  sp.sx,sp.sy,sp.w,sp.h,
+                  e.x,e.y,e.width,e.height);
+    const row = Math.floor(i/enemyCols),
           cols = ["#ffff66","#66ff66"];
-    ctx.globalCompositeOperation = "source-atop";
-    ctx.fillStyle = cols[row % 2];
-    ctx.fillRect(e.x, e.y, e.width, e.height);
-    ctx.globalCompositeOperation = "source-over";
-    ctx.strokeStyle = "black";
-    ctx.lineWidth   = 1;
-    ctx.strokeRect(e.x, e.y, e.width, e.height);
+    ctx.globalCompositeOperation="source-atop";
+    ctx.fillStyle = cols[row%2];
+    ctx.fillRect(e.x,e.y,e.width,e.height);
+    ctx.globalCompositeOperation="source-over";
+    ctx.strokeStyle="black";
+    ctx.lineWidth=1;
+    ctx.strokeRect(e.x,e.y,e.width,e.height);
   });
 }
 
-function drawPlayerBullets(){
+function drawPlayerBullets() {
   const sp = SPRITES.bullet;
-  player.bullets.forEach(b=>{
-    ctx.drawImage(sprites,
-                  sp.sx, sp.sy, sp.w, sp.h,
-                  b.x, b.y, b.width, b.height);
-  });
-  ctx.fillStyle = "white";
-  enemyBullets.forEach(b=>ctx.fillRect(b.x,b.y,b.width,b.height));
+  player.bullets.forEach(b =>
+    ctx.drawImage(sprites, sp.sx,sp.sy,sp.w,sp.h,
+                  b.x,b.y,b.width,b.height)
+  );
+  ctx.fillStyle="white";
+  enemyBullets.forEach(b => ctx.fillRect(b.x,b.y,b.width,b.height));
 }
 
-function drawShields(){
+function drawShields() {
   ctx.fillStyle="green";
-  shields.forEach(c=>ctx.fillRect(c.x,c.y,c.width,c.height));
+  shields.forEach(s => ctx.fillRect(s.x,s.y,s.width,s.height));
 }
 
-function drawExplosions(){
+function drawExplosions() {
   const sp = SPRITES.explosion;
-  explosions.forEach(ex=>{
+  explosions.forEach(ex => {
     const sz = ex.frame * 2;
     ctx.save();
     ctx.globalAlpha = 1 - ex.frame / explosionDuration;
-    ctx.drawImage(sprites,
-                  sp.sx, sp.sy, sp.w, sp.h,
+    ctx.drawImage(sprites, sp.sx,sp.sy,sp.w,sp.h,
                   ex.x - sz/2, ex.y - sz/2, sz, sz);
     ctx.restore();
   });
 }
 
-function drawMysteryShip(){
+function drawMysteryShip() {
   if (!mysteryShip) return;
-  const { x, y, width:w, height:h } = mysteryShip;
+  const { x,y,width:w,height:h } = mysteryShip;
   ctx.fillStyle="magenta";
   ctx.beginPath();
-  ctx.ellipse(x + w/2, y + h/2 + 2, w/2, h/2.5, 0, 0, 2*Math.PI);
+  ctx.ellipse(x + w/2, y + h/2 + 2, w/2, h/2.5, 0, 0,2*Math.PI);
   ctx.fill();
   ctx.fillStyle="#88ffdd";
   ctx.beginPath();
-  ctx.ellipse(x + w/2, y + h/2 - 4, w/4, h/3, 0, 0, 2*Math.PI);
+  ctx.ellipse(x + w/2, y + h/2 - 4, w/4, h/3, 0, 0,2*Math.PI);
   ctx.fill();
-  ctx.strokeStyle="black";
-  ctx.lineWidth=1;
-  ctx.stroke();
+  ctx.strokeStyle="black"; ctx.lineWidth=1; ctx.stroke();
 }
