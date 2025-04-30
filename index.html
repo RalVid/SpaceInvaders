@@ -3,12 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <title>Space Invaders Cabinet Style</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
-    body { margin: 0; background: black; overflow: hidden; color: white; text-align: center; }
-    #menu { margin-top: 50px; }
-    #menu h1 { font-size: 48px; margin-bottom: 20px; }
-    #menu button { font-size: 24px; padding: 10px 20px; }
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+      color: white;
+      text-align: center;
+      font-family: monospace;
+    }
+    #menu {
+      margin-top: 50px;
+    }
+    #menu h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    #menu p {
+      font-size: 20px;
+      margin: 5px 0;
+    }
+    #menu button {
+      font-size: 24px;
+      padding: 10px 20px;
+      background: black;
+      color: white;
+      border: 2px solid red;
+      cursor: pointer;
+    }
+    #menu button:hover {
+      background: red;
+      color: black;
+    }
     canvas {
       display: none;
       margin: 20px auto;
@@ -17,22 +44,37 @@
       box-sizing: border-box;
       touch-action: none;
     }
-    #mobile-controls { display: none; margin-top: 10px; }
+    /* single-fire button for mobile */
+    #mobile-controls {
+      display: none;
+      margin-top: 10px;
+    }
     #mobile-controls button {
-      padding: 10px; width: 80px; margin: 0 5px; font-size: 18px;
+      font-size: 18px;
+      padding: 10px 20px;
+      background: black;
+      color: white;
+      border: 2px solid red;
+      cursor: pointer;
+    }
+    #mobile-controls button:hover {
+      background: red;
+      color: black;
     }
     @media (max-width: 600px) {
-      #mobile-controls { display: block; }
+      #mobile-controls {
+        display: block;
+      }
     }
   </style>
 </head>
 <body>
   <!-- MAIN MENU -->
   <div id="menu">
-  	<h1>Space Invaders</h1>
-  	<p>High Score: <span id="menuHighscore">0000</span></p>
-	<p>Last Score: <span id="menulastscore">0000</span></p>
-  	<button id="startBtn">Insert Coin to Play</button>
+    <h1>Space Invaders</h1>
+    <p>High Score: <span id="menuHighscore">0000</span></p>
+    <p>Last Score: <span id="menulastscore">0000</span></p>
+    <button id="startBtn">Insert Coin to Play</button>
   </div>
 
   <!-- HIDDEN SPRITESHEETS -->
@@ -42,11 +84,9 @@
   <!-- GAME CANVAS -->
   <canvas id="gameCanvas" width="500" height="600"></canvas>
 
-  <!-- MOBILE CONTROLS -->
+  <!-- MOBILE FIRE BUTTON -->
   <div id="mobile-controls">
-    <button id="leftBtn">◀</button>
-    <button id="shootBtn">▲</button>
-    <button id="rightBtn">▶</button>
+    <button id="fireBtn">Fire</button>
   </div>
 
   <script src="game.js"></script>
