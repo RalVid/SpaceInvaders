@@ -41,30 +41,8 @@
       margin: 20px auto;
       background: black;
       border: 4px solid red;
-      box-sizing: border-box;
+      box‐sizing: border-box;
       touch-action: none;
-    }
-    /* single-fire button for mobile */
-    #mobile-controls {
-      display: none;
-      margin-top: 10px;
-    }
-    #mobile-controls button {
-      font-size: 18px;
-      padding: 10px 20px;
-      background: black;
-      color: white;
-      border: 2px solid red;
-      cursor: pointer;
-    }
-    #mobile-controls button:hover {
-      background: red;
-      color: black;
-    }
-    @media (max-width: 600px) {
-      #mobile-controls {
-        display: block;
-      }
     }
   </style>
 </head>
@@ -83,11 +61,6 @@
 
   <!-- GAME CANVAS -->
   <canvas id="gameCanvas" width="500" height="600"></canvas>
-
-  <!-- MOBILE FIRE BUTTON -->
-  <div id="mobile-controls">
-    <button id="fireBtn">Fire</button>
-  </div>
 
   <script src="game.js"></script>
 </body>
