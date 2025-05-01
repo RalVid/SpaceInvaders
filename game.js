@@ -19,7 +19,7 @@ const explosionDuration = 20;
 // logical game dimensions
 const GAME_W = 500, GAME_H = 600;
 
-// ==== MYSTERY SHIP & UFO SOUND STATE ====
+// ==== MYSTERY SHIP & UFO STATE ====
 let mysteryShip, mysteryTimer, ufoOsc, ufoGain;
 function getRandomMysteryFrames() {
   return Math.floor((20 + Math.random()*20) * 60);
@@ -43,9 +43,9 @@ function playGameOverMelody() {
     o.frequency.setValueAtTime(n.f, now + n.t);
     o.connect(g);
     o.start(now + n.t);
-    o.stop(  now + n.t + n.d );
+    o.stop(now + n.t + n.d);
   }
-  return notes[notes.length - 1].t + notes[notes.length - 1].d;
+  return notes[notes.length-1].t + notes[notes.length-1].d;
 }
 
 function drawGameOverText() {
@@ -103,8 +103,9 @@ function unlockAudio() {
 );
 
 // ==== TOUCH CONTROL ZONES ====
-// Lower zone (ty >= player.y): steer ship left/right by touching left/right of its center
-// Upper zone (ty <  player.y): shoot
+// Upper zone (ty <  player.y):           shoot
+// Dead zone  (player.y <= ty < player.y+player.height): do nothing
+// Lower zone (ty >= player.y+player.height): steer left/right based on touch x relative to cannon center
 canvas.addEventListener("touchstart", touchZoneHandler, { passive:false });
 canvas.addEventListener("touchmove",  touchZoneHandler, { passive:false });
 canvas.addEventListener("touchend",   e => {
@@ -121,12 +122,12 @@ function touchZoneHandler(e) {
   for (let t of e.touches) {
     const tx = (t.clientX - rect.left) * (canvas.width  / rect.width);
     const ty = (t.clientY - rect.top ) * (canvas.height / rect.height);
-    if (ty >= player.y) {
-      const centerX = player.x + player.width/2;
-      if (tx < centerX) steerLeft  = true;
-      else             steerRight = true;
-    } else {
+    if (ty < player.y) {
       shootZone = true;
+    } else if (ty >= player.y + player.height) {
+      const centerX = player.x + player.width/2;
+      if (tx < centerX) steerLeft = true;
+      else             steerRight = true;
     }
   }
   keys["ArrowLeft"]  = steerLeft;
@@ -251,7 +252,7 @@ function createShields() {
 
 // ==== MYSTERY UFO SPAWN & SIREN ====
 function spawnMystery() {
-  mysteryShip = { x: -50, y: 20, width: 40, height: 16, speed: 2 + wave*0.2 };
+  mysteryShip = { x:-50, y:20, width:40, height:16, speed:2+wave*0.2 };
   audioCtx.resume().then(() => {
     ufoOsc  = audioCtx.createOscillator();
     ufoGain = audioCtx.createGain();
@@ -286,62 +287,57 @@ function enemyShoot(e) {
 }
 
 function playShootSound() {
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx.state==="suspended") audioCtx.resume();
   const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
   osc.type = "square";
   osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime+0.1);
   g.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001,
-    audioCtx.currentTime + 0.1);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.1);
   osc.connect(g).connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+  osc.start(); osc.stop(audioCtx.currentTime+0.1);
 }
 
 function playExplosionSound() {
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx.state==="suspended") audioCtx.resume();
   const now = audioCtx.currentTime, dur = 0.4;
-  const len = audioCtx.sampleRate * dur;
-  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i=0; i<len; i++) data[i] = (Math.random()*2-1)*(1 - i/len);
-  const src = audioCtx.createBufferSource(),
-        filter = audioCtx.createBiquadFilter(),
-        gain   = audioCtx.createGain();
+  const len = audioCtx.sampleRate*dur;
+  const buf = audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i=0; i<len; i++) d[i] = (Math.random()*2-1)*(1 - i/len);
+  const src = audioCtx.createBufferSource(), filter = audioCtx.createBiquadFilter(), gain = audioCtx.createGain();
   src.buffer = buf;
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(800, now);
-  filter.frequency.exponentialRampToValueAtTime(200, now + dur);
+  filter.frequency.exponentialRampToValueAtTime(200, now+dur);
   filter.Q.setValueAtTime(0.7, now);
   gain.gain.setValueAtTime(0.8, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  gain.gain.exponentialRampToValueAtTime(0.001, now+dur);
   src.connect(filter).connect(gain).connect(audioCtx.destination);
-  src.start(now); src.stop(now + dur);
+  src.start(now); src.stop(now+dur);
 }
 
 function playHitSound() {
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx.state==="suspended") audioCtx.resume();
   const now = audioCtx.currentTime, dur = 0.6;
-  const len = audioCtx.sampleRate * dur;
-  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i=0; i<len; i++) data[i] = (Math.random()*2-1)*(1 - i/len);
-  const src = audioCtx.createBufferSource(),
-        filter = audioCtx.createBiquadFilter(),
-        gain   = audioCtx.createGain();
+  const len = audioCtx.sampleRate*dur;
+  const buf = audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i=0; i<len; i++) d[i] = (Math.random()*2-1)*(1 - i/len);
+  const src = audioCtx.createBufferSource(), filter = audioCtx.createBiquadFilter(), gain = audioCtx.createGain();
   src.buffer = buf;
   filter.type = "lowpass";
   filter.frequency.setValueAtTime(1200, now);
-  filter.frequency.exponentialRampToValueAtTime(300, now + dur);
+  filter.frequency.exponentialRampToValueAtTime(300, now+dur);
   filter.Q.setValueAtTime(0.7, now);
   gain.gain.setValueAtTime(1, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  gain.gain.exponentialRampToValueAtTime(0.001, now+dur);
   src.connect(filter).connect(gain).connect(audioCtx.destination);
-  src.start(now); src.stop(now + dur);
+  src.start(now); src.stop(now+dur);
 }
 
 function addExplosion(x,y) {
-  explosions.push({ x, y, frame: 0 });
+  explosions.push({ x,y,frame:0 });
   playExplosionSound();
 }
 
@@ -356,14 +352,14 @@ function gameLoop() {
 function update() {
   if (paused || gameOver) return;
 
-  // mystery UFO logic
+  // mystery UFO
   if (!mysteryShip) {
     mysteryTimer--;
     if (mysteryTimer <= 0) spawnMystery();
   } else {
     mysteryShip.x += mysteryShip.speed;
     if (ufoOsc) {
-      const f = 200 + 300 * (mysteryShip.x / GAME_W);
+      const f = 200 + 300*(mysteryShip.x/GAME_W);
       ufoOsc.frequency.setValueAtTime(f, audioCtx.currentTime);
     }
     if (mysteryShip.x > GAME_W) {
@@ -373,50 +369,42 @@ function update() {
     }
   }
 
-  // keyboard movement & shooting
-  if (keys["ArrowLeft"]  && player.x > 0)                   player.x -= player.speed;
-  if (keys["ArrowRight"] && player.x + player.width < GAME_W) player.x += player.speed;
+  // player movement & shooting
+  if (keys["ArrowLeft"] && player.x > 0)                    player.x -= player.speed;
+  if (keys["ArrowRight"]&& player.x+player.width < GAME_W) player.x += player.speed;
   if (keys[" "]) shoot();
-  if (player.cooldown > 0) player.cooldown--;
+  if (player.cooldown>0) player.cooldown--;
 
-  // move bullets
-  player.bullets.forEach((b,i)=>{
-    b.y -= b.speed;
-    if (b.y < 0) player.bullets.splice(i,1);
-  });
-  enemyBullets.forEach((b,i)=>{
-    b.y += b.speed;
-    if (b.y > GAME_H) enemyBullets.splice(i,1);
-  });
+  // update bullets
+  player.bullets.forEach((b,i)=>{ b.y -= b.speed; if (b.y<0) player.bullets.splice(i,1); });
+  enemyBullets.forEach((b,i)=>{ b.y += b.speed; if (b.y>GAME_H) enemyBullets.splice(i,1); });
 
-  // move enemies
-  let down = false;
-  enemies.forEach(e => {
+  // update enemies
+  let down=false;
+  enemies.forEach(e=>{
     if (!e.alive) return;
-    e.x += enemyDirection * enemySpeed;
-    if (e.x <= 0 || e.x + e.width >= GAME_W) down = true;
+    e.x += enemyDirection*enemySpeed;
+    if (e.x<=0||e.x+e.width>=GAME_W) down=true;
   });
   if (down) {
     enemyDirection *= -1;
-    enemies.forEach(e => e.y += 10);
+    enemies.forEach(e=>e.y += 10);
   }
-  if (Math.random() < 0.02) {
+  if (Math.random()<0.02) {
     const a = enemies.filter(e=>e.alive);
     if (a.length) enemyShoot(a[Math.floor(Math.random()*a.length)]);
   }
 
   // update explosions
-  explosions.forEach((ex,i)=>{
-    if (++ex.frame > explosionDuration) explosions.splice(i,1);
-  });
+  explosions.forEach((ex,i)=>{ if (++ex.frame>explosionDuration) explosions.splice(i,1); });
 
   handleCollisions();
 
-  // enemies reach player
+  // check enemy reach
   enemies.forEach(e=>{
-    if (e.alive && e.y + e.height >= player.y) {
+    if (e.alive && e.y+e.height >= player.y) {
       e.alive = false;
-      handlePlayerHit(e.x + e.width/2, e.y + e.height/2);
+      handlePlayerHit(e.x+e.width/2, e.y+e.height/2);
     }
   });
 
@@ -430,63 +418,56 @@ function update() {
 
 // ==== COLLISION HANDLING ====
 function handleCollisions() {
-  // player bullets → mystery
-  player.bullets = player.bullets.filter(b => {
+  // bullets → mystery
+  player.bullets = player.bullets.filter(b=>{
     if (mysteryShip &&
-        b.x < mysteryShip.x + mysteryShip.width &&
-        b.x + b.width > mysteryShip.x &&
-        b.y < mysteryShip.y + mysteryShip.height &&
-        b.y + b.height > mysteryShip.y) {
-      const bonus = (1 + Math.floor(Math.random()*5)) * 50;
+        b.x < mysteryShip.x+mysteryShip.width &&
+        b.x+b.width>mysteryShip.x &&
+        b.y < mysteryShip.y+mysteryShip.height &&
+        b.y+b.height>mysteryShip.y) {
+      const bonus = (1+Math.floor(Math.random()*5))*50;
       score += bonus;
-      if (score > highscore) {
-        highscore = score;
-        localStorage.setItem("highscore", highscore);
+      if (score>highscore) {
+        highscore=score;
+        localStorage.setItem("highscore",highscore);
       }
       addExplosion(b.x,b.y);
-      mysteryShip = null;
-      mysteryTimer = getRandomMysteryFrames();
-      if (ufoOsc) { ufoOsc.stop(); ufoOsc = null; ufoGain = null; }
+      mysteryShip=null;
+      mysteryTimer=getRandomMysteryFrames();
+      if (ufoOsc){ufoOsc.stop();ufoOsc=null;ufoGain=null;}
       return false;
     }
     return true;
   });
-
-  // player bullets → enemies
-  player.bullets = player.bullets.filter(b => {
+  // bullets → enemies
+  player.bullets = player.bullets.filter(b=>{
     for (let e of enemies) {
       if (e.alive &&
-          b.x < e.x + e.width && b.x + b.width > e.x &&
-          b.y < e.y + e.height && b.y + b.height > e.y) {
-        e.alive = false;
-        score += 10;
-        if (score > highscore) {
-          highscore = score;
-          localStorage.setItem("highscore", highscore);
-        }
+          b.x<e.x+e.width && b.x+b.width>e.x &&
+          b.y<e.y+e.height && b.y+b.height>e.y) {
+        e.alive=false;
+        score+=10;
+        if(score>highscore){ highscore=score; localStorage.setItem("highscore",highscore); }
         addExplosion(b.x,b.y);
         return false;
       }
     }
     return true;
   });
-
   // enemy bullets → player
-  enemyBullets = enemyBullets.filter(b => {
-    if (b.x < player.x + player.width && b.x + b.width > player.x &&
-        b.y < player.y + player.height && b.y + b.height > player.y) {
-      handlePlayerHit(player.x + player.width/2, player.y);
+  enemyBullets = enemyBullets.filter(b=>{
+    if (b.x<player.x+player.width&&b.x+b.width>player.x&&
+        b.y<player.y+player.height&&b.y+b.height>player.y) {
+      handlePlayerHit(player.x+player.width/2,player.y);
       return false;
     }
     return true;
   });
-
   // bullets → shields
-  player.bullets = player.bullets.filter(b => {
-    for (let i=0; i<shields.length; i++){
-      const s = shields[i];
-      if (b.x < s.x + s.width && b.x + b.width > s.x &&
-          b.y < s.y + s.height && b.y + b.height > s.y) {
+  player.bullets = player.bullets.filter(b=>{
+    for (let i=0;i<shields.length;i++){
+      const s=shields[i];
+      if (b.x<s.x+s.width&&b.x+b.width>s.x&&b.y<s.y+s.height&&b.y+b.height>s.y){
         shields.splice(i,1);
         addExplosion(b.x,b.y);
         return false;
@@ -494,11 +475,10 @@ function handleCollisions() {
     }
     return true;
   });
-  enemyBullets = enemyBullets.filter(b => {
-    for (let i=0; i<shields.length; i++){
-      const s = shields[i];
-      if (b.x < s.x + s.width && b.x + b.width > s.x &&
-          b.y < s.y + s.height && b.y + b.height > s.y) {
+  enemyBullets = enemyBullets.filter(b=>{
+    for (let i=0;i<shields.length;i++){
+      const s=shields[i];
+      if (b.x<s.x+s.width&&b.x+b.width>s.x&&b.y<s.y+s.height&&b.y+b.height>s.y){
         shields.splice(i,1);
         addExplosion(b.x,b.y);
         return false;
@@ -515,17 +495,16 @@ function draw() {
     return;
   }
   ctx.clearRect(0,0,GAME_W,GAME_H);
-
   // HUD
   ctx.fillStyle="red";
   ctx.font="16px monospace";
   ctx.textBaseline="top";
   ctx.fillText(`SCORE: ${score.toString().padStart(4,"0")}`,10,10);
-  const hiText = `HI-SCORE: ${highscore.toString().padStart(4,"0")}`;
-  const hiX = GAME_W/2 - ctx.measureText(hiText).width/2;
-  ctx.fillText(hiText, hiX, 10);
-  ctx.fillText(`LIVES: ${lives}`, GAME_W-100, 10);
-
+  const hi=`HI-SCORE: ${highscore.toString().padStart(4,"0")}`;
+  const hiX=GAME_W/2 - ctx.measureText(hi).width/2;
+  ctx.fillText(hi,hiX,10);
+  ctx.fillText(`LIVES: ${lives}`,GAME_W-100,10);
+  // render
   drawMysteryShip();
   drawEnemies();
   drawPlayer();
@@ -535,78 +514,58 @@ function draw() {
 }
 
 function drawPlayer() {
-  const sp = SPRITES.player;
-  ctx.drawImage(sprites,
-                sp.sx, sp.sy, sp.w, sp.h,
-                player.x, player.y, player.width, player.height);
-  // cannon barrel
-  const bw=6, bh=12,
-        bx=player.x+player.width/2-bw/2,
-        by=player.y-bh+2;
+  const sp=SPRITES.player;
+  ctx.drawImage(sprites,sp.sx,sp.sy,sp.w,sp.h,player.x,player.y,player.width,player.height);
+  const bw=6,bh=12,bx=player.x+player.width/2-bw/2,by=player.y-bh+2;
   ctx.fillStyle="#888";
   ctx.fillRect(bx,by,bw,bh);
 }
 
 function drawEnemies() {
-  const sp = ENEMY_FRAMES[enemyFrame];
-  enemies.forEach((e,i) => {
-    if (!e.alive) return;
-    ctx.drawImage(enemySprites,
-                  sp.sx, sp.sy, sp.w, sp.h,
-                  e.x, e.y, e.width, e.height);
-    const row = Math.floor(i / enemyCols),
-          cols = ["#ffff66","#66ff66"];
+  const sp=ENEMY_FRAMES[enemyFrame];
+  enemies.forEach((e,i)=>{
+    if(!e.alive) return;
+    ctx.drawImage(enemySprites,sp.sx,sp.sy,sp.w,sp.h,e.x,e.y,e.width,e.height);
+    const row=Math.floor(i/enemyCols), cols=["#ffff66","#66ff66"];
     ctx.globalCompositeOperation="source-atop";
-    ctx.fillStyle = cols[row % 2];
-    ctx.fillRect(e.x, e.y, e.width, e.height);
+    ctx.fillStyle=cols[row%2];
+    ctx.fillRect(e.x,e.y,e.width,e.height);
     ctx.globalCompositeOperation="source-over";
-    ctx.strokeStyle="black";
-    ctx.lineWidth=1;
-    ctx.strokeRect(e.x, e.y, e.width, e.height);
+    ctx.strokeStyle="black";ctx.lineWidth=1;
+    ctx.strokeRect(e.x,e.y,e.width,e.height);
   });
 }
 
 function drawPlayerBullets() {
-  const sp = SPRITES.bullet;
-  player.bullets.forEach(b => {
-    ctx.drawImage(sprites,
-                  sp.sx, sp.sy, sp.w, sp.h,
-                  b.x, b.y, b.width, b.height);
-  });
+  const sp=SPRITES.bullet;
+  player.bullets.forEach(b=>
+    ctx.drawImage(sprites,sp.sx,sp.sy,sp.w,sp.h,b.x,b.y,b.width,b.height)
+  );
   ctx.fillStyle="white";
-  enemyBullets.forEach(b => ctx.fillRect(b.x,b.y,b.width,b.height));
+  enemyBullets.forEach(b=>ctx.fillRect(b.x,b.y,b.width,b.height));
 }
 
 function drawShields() {
   ctx.fillStyle="green";
-  shields.forEach(s => ctx.fillRect(s.x,s.y,s.width,s.height));
+  shields.forEach(s=>ctx.fillRect(s.x,s.y,s.width,s.height));
 }
 
 function drawExplosions() {
-  const sp = SPRITES.explosion;
-  explosions.forEach(ex => {
-    const sz = ex.frame * 2;
-    ctx.save();
-    ctx.globalAlpha = 1 - ex.frame / explosionDuration;
-    ctx.drawImage(sprites,
-                  sp.sx, sp.sy, sp.w, sp.h,
-                  ex.x - sz/2, ex.y - sz/2, sz, sz);
+  const sp=SPRITES.explosion;
+  explosions.forEach(ex=>{
+    const sz=ex.frame*2;
+    ctx.save();ctx.globalAlpha=1-ex.frame/explosionDuration;
+    ctx.drawImage(sprites,sp.sx,sp.sy,sp.w,sp.h,ex.x-sz/2,ex.y-sz/2,sz,sz);
     ctx.restore();
   });
 }
 
 function drawMysteryShip() {
-  if (!mysteryShip) return;
-  const { x, y, width:w, height:h } = mysteryShip;
-  ctx.fillStyle="magenta";
-  ctx.beginPath();
-  ctx.ellipse(x + w/2, y + h/2 + 2, w/2, h/2.5, 0, 0, 2*Math.PI);
-  ctx.fill();
-  ctx.fillStyle="#88ffdd";
-  ctx.beginPath();
-  ctx.ellipse(x + w/2, y + h/2 - 4, w/4, h/3, 0, 0, 2*Math.PI);
-  ctx.fill();
-  ctx.strokeStyle="black";
-  ctx.lineWidth=1;
-  ctx.stroke();
+  if(!mysteryShip) return;
+  const {x,y,width:w,height:h}=mysteryShip;
+  ctx.fillStyle="magenta";ctx.beginPath();
+  ctx.ellipse(x+w/2,y+h/2+2,w/2,h/2.5,0,0,2*Math.PI);ctx.fill();
+  ctx.fillStyle="#88ffdd";ctx.beginPath();
+  ctx.ellipse(x+w/2,y+h/2-4,w/4,h/3,0,0,2*Math.PI);ctx.fill();
+  ctx.strokeStyle="black";ctx.lineWidth=1;ctx.stroke();
 }
