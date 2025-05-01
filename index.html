@@ -5,10 +5,26 @@
   <title>Space Invaders Cabinet Style</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin: 0; background: black; overflow: hidden; color: white; text-align: center; }
-    #menu { margin-top: 50px; }
-    #menu h1 { font-size: 48px; margin-bottom: 20px; }
-    #menu button { font-size: 24px; padding: 10px 20px; }
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+      color: white;
+      text-align: center;
+      position: relative;
+      height: 100vh;
+    }
+    #menu {
+      margin-top: 50px;
+    }
+    #menu h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    #menu button {
+      font-size: 24px;
+      padding: 10px 20px;
+    }
 
     canvas {
       display: none;
@@ -19,22 +35,26 @@
       touch-action: none;
     }
 
+    /* always hidden by default */
     #mobile-controls {
       display: none;
-      position: fixed;
+      position: absolute;
       bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
+      gap: 20px;
     }
     #mobile-controls button {
       font-size: 24px;
       padding: 10px 20px;
-      margin: 0 20px;
       opacity: 0.6;
     }
 
+    /* on small screens only, use .show to reveal */
     @media (max-width: 600px) {
-      #mobile-controls { display: block; }
+      #mobile-controls.show {
+        display: flex;
+      }
     }
   </style>
 </head>
@@ -54,7 +74,7 @@
   <!-- GAME CANVAS -->
   <canvas id="gameCanvas" width="500" height="600"></canvas>
 
-  <!-- MOBILE STEERING CONTROLS -->
+  <!-- MOBILE STEERING CONTROLS (hidden by default) -->
   <div id="mobile-controls">
     <button id="leftBtn">◀</button>
     <button id="rightBtn">▶</button>
