@@ -3,46 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <title>Space Invaders Cabinet Style</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {
-      margin: 0;
-      background: black;
-      overflow: hidden;
-      color: white;
-      text-align: center;
-      font-family: monospace;
-    }
-    #menu {
-      margin-top: 50px;
-    }
-    #menu h1 {
-      font-size: 48px;
-      margin-bottom: 20px;
-    }
-    #menu p {
-      font-size: 20px;
-      margin: 5px 0;
-    }
-    #menu button {
-      font-size: 24px;
-      padding: 10px 20px;
-      background: black;
-      color: white;
-      border: 2px solid red;
-      cursor: pointer;
-    }
-    #menu button:hover {
-      background: red;
-      color: black;
-    }
+    body { margin: 0; background: black; overflow: hidden; color: white; text-align: center; }
+    #menu { margin-top: 50px; }
+    #menu h1 { font-size: 48px; margin-bottom: 20px; }
+    #menu button { font-size: 24px; padding: 10px 20px; }
+
     canvas {
       display: none;
       margin: 20px auto;
       background: black;
       border: 4px solid red;
-      box‐sizing: border-box;
+      box-sizing: border-box;
       touch-action: none;
+    }
+
+    #mobile-controls {
+      display: none;
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    #mobile-controls button {
+      font-size: 24px;
+      padding: 10px 20px;
+      margin: 0 20px;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 600px) {
+      #mobile-controls { display: block; }
     }
   </style>
 </head>
@@ -61,6 +53,12 @@
 
   <!-- GAME CANVAS -->
   <canvas id="gameCanvas" width="500" height="600"></canvas>
+
+  <!-- MOBILE STEERING CONTROLS -->
+  <div id="mobile-controls">
+    <button id="leftBtn">◀</button>
+    <button id="rightBtn">▶</button>
+  </div>
 
   <script src="game.js"></script>
 </body>
