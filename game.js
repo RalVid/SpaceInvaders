@@ -8,10 +8,10 @@ const canvas          = document.getElementById("gameCanvas");
 const ctx             = canvas.getContext("2d");
 const sprites         = document.getElementById("sprites");
 const enemySprites    = document.getElementById("enemySprites");
-const leftBtn         = document.getElementById("leftBtn");
-const rightBtn        = document.getElementById("rightBtn");
-const shootBtn        = document.getElementById("shootBtn");
 const mobileControls  = document.getElementById("mobile-controls");
+const leftZone        = document.getElementById("leftZone");
+const rightZone       = document.getElementById("rightZone");
+const fireZone        = document.getElementById("fireZone");
 
 const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 
@@ -66,8 +66,9 @@ function drawGameOverText(){
 
 // ==== RESPONSIVE SCALING ====
 function resizeCanvas(){
-  const vw = window.innerWidth, vh = window.innerHeight;
-  const scale = Math.min(1, vw/GAME_W, vh/GAME_H);
+  const vw    = window.innerWidth;
+  const vh    = window.innerHeight;
+  const scale = Math.min(1, vw / GAME_W, vh / GAME_H);
   container.style.transform = `translate(-50%,-50%) scale(${scale})`;
   container.style.top       = "50%";
   container.style.left      = "50%";
@@ -95,20 +96,20 @@ setInterval(()=>enemyFrame=1-enemyFrame,500);
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup",   e => keys[e.key] = false);
 
-// ==== MOBILE BUTTONS VIA POINTER EVENTS ====
-function bindControl(btn, key) {
-  btn.style.touchAction = "none";
-  btn.addEventListener("pointerdown", e => {
+// ==== POINTER-BASED TOUCH ZONES ====
+function bindZone(zoneEl, key) {
+  zoneEl.style.touchAction = "none";
+  zoneEl.addEventListener("pointerdown", e => {
     e.preventDefault();
     keys[key] = true;
   });
-  btn.addEventListener("pointerup",    () => keys[key] = false);
-  btn.addEventListener("pointercancel",() => keys[key] = false);
-  btn.addEventListener("pointerleave", () => keys[key] = false);
+  ["pointerup","pointercancel","pointerleave"].forEach(evt =>
+    zoneEl.addEventListener(evt, () => { keys[key] = false; })
+  );
 }
-bindControl(leftBtn,  "ArrowLeft");
-bindControl(rightBtn, "ArrowRight");
-bindControl(shootBtn, " ");
+bindZone(leftZone,  "ArrowLeft");
+bindZone(rightZone, "ArrowRight");
+bindZone(fireZone,  " ");
 
 // ==== UNLOCK AUDIO ON FIRST GESTURE ====
 function unlockAudio(){
@@ -171,7 +172,6 @@ function playShootSound(){
   osc.connect(g).connect(audioCtx.destination);
   osc.start(); osc.stop(audioCtx.currentTime+0.1);
 }
-
 function playExplosionSound(){
   if(audioCtx.state==="suspended") audioCtx.resume();
   const now=audioCtx.currentTime, dur=0.4;
@@ -188,7 +188,6 @@ function playExplosionSound(){
   src.connect(f).connect(g).connect(audioCtx.destination);
   src.start(now); src.stop(now+dur);
 }
-
 function playHitSound(){
   if(audioCtx.state==="suspended") audioCtx.resume();
   const now=audioCtx.currentTime, dur=0.6;
@@ -205,7 +204,6 @@ function playHitSound(){
   src.connect(f).connect(g).connect(audioCtx.destination);
   src.start(now); src.stop(now+dur);
 }
-
 function playUfoHitSound(){
   if(audioCtx.state==="suspended") audioCtx.resume();
   const now=audioCtx.currentTime;
@@ -256,12 +254,8 @@ function startGame(){
   if(ufoOsc){ufoOsc.stop();ufoOsc=null;ufoGain=null}
 
   player = {
-    x: GAME_W/2 - 25,
-    y: GAME_H - 60,
-    width: 50, height: 20,
-    speed: 5,
-    bullets: [], cooldown: 0,
-    blink: 0
+    x: GAME_W/2-25, y: GAME_H-60, width:50, height:20,
+    speed:5, bullets:[], cooldown:0, blink:0
   };
   enemies      = [];
   enemyBullets = [];
@@ -281,7 +275,7 @@ function createEnemies(){
   const w=FRAME_W*2, h=FRAME_H*2, gapX=GAME_W/cols;
   for(let r=0;r<rows;r++){
     for(let c=0;c<cols;c++){
-      enemies.push({ x: gapX*c+(gapX-w)/2, y:40*r+30, width:w, height:h, alive:true });
+      enemies.push({ x:gapX*c+(gapX-w)/2, y:40*r+30, width:w, height:h, alive:true });
     }
   }
 }
@@ -301,7 +295,7 @@ function createShields(){
 
 // ==== MYSTERY UFO ====
 function spawnMystery(){
-  mysteryShip={ x:-50, y:20, width:40, height:16, speed:2 + wave*0.2 };
+  mysteryShip={ x:-50, y:20, width:40, height:16, speed:2+wave*0.2 };
   audioCtx.resume().then(()=>{
     ufoOsc=audioCtx.createOscillator();
     ufoGain=audioCtx.createGain();
@@ -391,7 +385,7 @@ function update(delta){
   enemyBullets.forEach((b,i)=>{ b.y += b.speed*delta*60; if(b.y>GAME_H) enemyBullets.splice(i,1); });
 
   // explosions
-  explosions.forEach((ex,i)=>{ if(++ex.frame>explosionDuration) explosions.splice(i,1); });
+  explosions.forEach((ex,i)=>{ if(++ex.frame>explosionDuration)explosions.splice(i,1); });
 
   handleCollisions();
 
@@ -406,6 +400,11 @@ function update(delta){
   // next wave
   if(enemies.every(e=>!e.alive)){ wave++; enemySpeed = 1 + (wave-1)*0.5; initLevel(); }
 }
+
+// ==== COLLISIONS, DRAW HELPERS OMITTED FOR BREVITY ====
+
+
+
 
 // ==== COLLISIONS ====
 function handleCollisions(){
