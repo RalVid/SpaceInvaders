@@ -1,59 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Space Invaders Cabinet Style</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    /* Retro arcade font */
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
     body {
       margin: 0;
-      background: black;
-      overflow: hidden;
-      color: white;
+      background: #000;
+      color: #0f0;
+      font-family: 'Press Start 2P', monospace;
       text-align: center;
+      overflow: hidden;
       position: relative;
       height: 100vh;
     }
+
+    /* MAIN MENU */
     #menu {
-      margin-top: 50px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
     #menu h1 {
-      font-size: 48px;
+      font-size: 24px;
       margin-bottom: 20px;
+      text-shadow: 0 0 8px #0f0;
+    }
+    #menu p {
+      margin: 8px 0;
+      font-size: 14px;
     }
     #menu button {
-      font-size: 24px;
-      padding: 10px 20px;
+      margin-top: 16px;
+      padding: 12px 24px;
+      font-size: 12px;
+      background: #0f0;
+      color: #000;
+      border: 2px solid #0f0;
+      cursor: pointer;
+      text-shadow: none;
     }
 
+    /* GAME CANVAS */
     canvas {
       display: none;
       margin: 20px auto;
-      background: black;
-      border: 4px solid red;
+      background: #000;
+      border: 4px solid #0f0;
       box-sizing: border-box;
-      touch-action: none;
     }
 
-    /* always hidden by default */
+    /* MOBILE CONTROLS, hidden by default */
     #mobile-controls {
       display: none;
       position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      gap: 20px;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
     }
-    #mobile-controls button {
-      font-size: 24px;
-      padding: 10px 20px;
-      opacity: 0.6;
+    #mobile-controls.show {
+      display: block;
     }
 
-    /* on small screens only, use .show to reveal */
+    /* Buttons styling */
+    #shootBtn,
+    #leftBtn,
+    #rightBtn {
+      background: transparent;
+      border: 2px solid #0f0;
+      color: #0f0;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 18px;
+      pointer-events: auto;
+    }
+
+    /* Fire button on left */
+    #shootBtn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      padding: 12px;
+    }
+    /* Steering buttons on right */
+    .steer-buttons {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+    }
+    .steer-buttons button {
+      margin-left: 12px;
+      padding: 12px;
+    }
+
+    /* Show controls only on small screens */
     @media (max-width: 600px) {
       #mobile-controls.show {
-        display: flex;
+        display: block;
       }
     }
   </style>
@@ -61,10 +108,10 @@
 <body>
   <!-- MAIN MENU -->
   <div id="menu">
-    <h1>Space Invaders</h1>
-    <p>High Score: <span id="menuHighscore">0000</span></p>
-    <p>Last Score: <span id="menulastscore">0000</span></p>
-    <button id="startBtn">Insert Coin to Play</button>
+    <h1>SPACE INVADERS</h1>
+    <p>HIGH SCORE: <span id="menuHighscore">0000</span></p>
+    <p>LAST SCORE: <span id="menulastscore">0000</span></p>
+    <button id="startBtn">INSERT COIN</button>
   </div>
 
   <!-- HIDDEN SPRITESHEETS -->
@@ -74,10 +121,13 @@
   <!-- GAME CANVAS -->
   <canvas id="gameCanvas" width="500" height="600"></canvas>
 
-  <!-- MOBILE STEERING CONTROLS (hidden by default) -->
+  <!-- MOBILE CONTROLS -->
   <div id="mobile-controls">
-    <button id="leftBtn">◀</button>
-    <button id="rightBtn">▶</button>
+    <button id="shootBtn">▲</button>
+    <div class="steer-buttons">
+      <button id="leftBtn">◀</button>
+      <button id="rightBtn">▶</button>
+    </div>
   </div>
 
   <script src="game.js"></script>
