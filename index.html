@@ -7,7 +7,6 @@
   <style>
     /* Retro arcade font */
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
     body {
       margin: 0;
       background: #000;
@@ -18,7 +17,6 @@
       position: relative;
       height: 100vh;
     }
-
     /* MAIN MENU */
     #menu {
       position: absolute;
@@ -45,7 +43,6 @@
       cursor: pointer;
       text-shadow: none;
     }
-
     /* GAME CANVAS */
     canvas {
       display: none;
@@ -54,8 +51,7 @@
       border: 4px solid #0f0;
       box-sizing: border-box;
     }
-
-    /* MOBILE CONTROLS, hidden by default */
+    /* MOBILE CONTROLS (hidden by default) */
     #mobile-controls {
       display: none;
       position: absolute;
@@ -66,7 +62,6 @@
     #mobile-controls.show {
       display: block;
     }
-
     /* Buttons styling */
     #shootBtn,
     #leftBtn,
@@ -78,7 +73,6 @@
       font-size: 18px;
       pointer-events: auto;
     }
-
     /* Fire button on left */
     #shootBtn {
       position: absolute;
@@ -96,7 +90,6 @@
       margin-left: 12px;
       padding: 12px;
     }
-
     /* Show controls only on small screens */
     @media (max-width: 600px) {
       #mobile-controls.show {
@@ -110,13 +103,13 @@
   <div id="menu">
     <h1>SPACE INVADERS</h1>
     <p>HIGH SCORE: <span id="menuHighscore">0000</span></p>
-    <p>LAST SCORE: <span id="menulastscore">0000</span></p>
+    <p>LAST SCORE: <span id="menuLastscore">0000</span></p>
     <button id="startBtn">INSERT COIN</button>
   </div>
 
   <!-- HIDDEN SPRITESHEETS -->
-  <img id="sprites"      src="assets/spritesheet.png"     style="display:none" />
-  <img id="enemySprites" src="assets/invaders_custom.png" style="display:none" />
+  <img id="sprites"      src="assets/spritesheet.png"     alt="" style="display:none">
+  <img id="enemySprites" src="assets/invaders_custom.png" alt="" style="display:none">
 
   <!-- GAME CANVAS -->
   <canvas id="gameCanvas" width="500" height="600"></canvas>
