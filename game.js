@@ -21,18 +21,16 @@ let player, enemies, enemyBullets, shields, explosions, popups;
 let score, lives, highscore, lastscore;
 let gameOver, wave, enemySpeed, enemyDirection, enemyCols;
 const explosionDuration = 20;
-const popupDuration     = 60;  // frames
+const popupDuration     = 60;
 
 // UFO state
 let mysteryShip, mysteryTimer, ufoOsc, ufoGain;
 
-// prevent repeated drops at edges
+// drop cooldown
 let dropCooldown = 0;
 
 // logical canvas size
 const GAME_W = 500, GAME_H = 600;
-
-// for variable‐timestep
 let lastTime = 0;
 
 // ==== UTILITIES ====
@@ -57,22 +55,19 @@ function playGameOverMelody() {
   osc.stop(now+duration);
   return duration;
 }
-
 function drawGameOverText(){
   ctx.clearRect(0,0,GAME_W,GAME_H);
-  ctx.fillStyle = "white";
-  ctx.font      = "48px monospace";
-  ctx.textAlign = "center";
+  ctx.fillStyle    = "white";
+  ctx.font         = "48px monospace";
+  ctx.textAlign    = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("GAME OVER", GAME_W/2, GAME_H/2);
 }
 
 // ==== RESPONSIVE SCALING ====
-// Never upscale beyond 1×
 function resizeCanvas(){
-  const vw    = window.innerWidth;
-  const vh    = window.innerHeight;
-  const scale = Math.min(1, vw / GAME_W, vh / GAME_H);
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const scale = Math.min(1, vw/GAME_W, vh/GAME_H);
   container.style.transform = `translate(-50%,-50%) scale(${scale})`;
   container.style.top       = "50%";
   container.style.left      = "50%";
@@ -97,62 +92,65 @@ let enemyFrame=0;
 setInterval(()=>enemyFrame=1-enemyFrame,500);
 
 // ==== INPUT HANDLERS ====
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",  e=>keys[e.key]=false);
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup",   e => keys[e.key] = false);
 
-// ==== MOBILE BUTTONS ====
-function bindControl(btn,key){
-  btn.addEventListener("mousedown", ()=>keys[key]=true);
-  btn.addEventListener("mouseup",   ()=>keys[key]=false);
-  btn.addEventListener("mouseleave",()=>keys[key]=false);
-  btn.addEventListener("touchstart",e=>{ e.preventDefault(); keys[key]=true; },{passive:false});
-  btn.addEventListener("touchend",  e=>{ e.preventDefault(); keys[key]=false;},{passive:false});
+// ==== MOBILE BUTTONS VIA POINTER EVENTS ====
+function bindControl(btn, key) {
+  btn.style.touchAction = "none";
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    keys[key] = true;
+  });
+  btn.addEventListener("pointerup",    () => keys[key] = false);
+  btn.addEventListener("pointercancel",() => keys[key] = false);
+  btn.addEventListener("pointerleave", () => keys[key] = false);
 }
-bindControl(leftBtn, "ArrowLeft");
-bindControl(rightBtn,"ArrowRight");
-bindControl(shootBtn," ");
+bindControl(leftBtn,  "ArrowLeft");
+bindControl(rightBtn, "ArrowRight");
+bindControl(shootBtn, " ");
 
-// ==== UNLOCK AUDIO ON GESTURE ====
+// ==== UNLOCK AUDIO ON FIRST GESTURE ====
 function unlockAudio(){
-  if(audioCtx.state==="suspended") audioCtx.resume();
-  ["click","touchstart","keydown"].forEach(evt=>window.removeEventListener(evt,unlockAudio));
+  if (audioCtx.state==="suspended") audioCtx.resume();
+  ["click","pointerdown","keydown"].forEach(evt => window.removeEventListener(evt, unlockAudio));
 }
-["click","touchstart","keydown"].forEach(evt=>window.addEventListener(evt,unlockAudio));
+["click","pointerdown","keydown"].forEach(evt => window.addEventListener(evt, unlockAudio));
 
 // ==== MAIN MENU START ====
 startBtn.onclick = ()=>{
-  menu.style.display   = "none";
-  container.style.display = "block";
-  canvas.style.display = "block";
+  menu.style.display        = "none";
+  container.style.display   = "block";
+  canvas.style.display      = "block";
   mobileControls.classList.add("show");
   startGame();
 };
 
-// wait for sprites, then show menu
+// wait for sprites to load
 let loaded=0;
-[sprites,enemySprites].forEach(img=>{
-  img.onload=()=>{
-    if(++loaded===2){
-      highscore = +localStorage.getItem("highscore")||0;
-      lastscore = +localStorage.getItem("lastscore") ||0;
+[sprites, enemySprites].forEach(img => {
+  img.onload = () => {
+    if (++loaded === 2) {
+      highscore = +localStorage.getItem("highscore") || 0;
+      lastscore = +localStorage.getItem("lastscore")  || 0;
       menuHighscore.textContent = highscore.toString().padStart(4,"0");
       menuLastscore.textContent = lastscore.toString().padStart(4,"0");
-      menu.style.display="block";
+      menu.style.display = "block";
     }
-  }
+  };
 });
 
 // ==== POPUPS ====
 function addPopup(x,y,text){ popups.push({x,y,text,frame:0}); }
-function updatePopups(){ popups=popups.filter(p=>++p.frame<=popupDuration); }
+function updatePopups(){ popups = popups.filter(p=>++p.frame<=popupDuration); }
 function drawPopups(){
   ctx.font="16px monospace"; ctx.textAlign="center";
   popups.forEach(p=>{
-    ctx.globalAlpha=1-p.frame/popupDuration;
-    ctx.fillStyle="yellow";
-    ctx.fillText(p.text,p.x,p.y-p.frame);
+    ctx.globalAlpha = 1 - p.frame/popupDuration;
+    ctx.fillStyle   = "yellow";
+    ctx.fillText(p.text, p.x, p.y - p.frame);
   });
-  ctx.globalAlpha=1;
+  ctx.globalAlpha = 1;
 }
 
 // ==== EXPLOSIONS ====
@@ -161,49 +159,49 @@ function addExplosion(x,y){
   playExplosionSound();
 }
 
-// ==== SOUNDS ====
+// ==== SOUND FX ====
 function playShootSound(){
   if(audioCtx.state==="suspended") audioCtx.resume();
-  const osc=audioCtx.createOscillator(),g=audioCtx.createGain();
-  osc.type="square";
-  osc.frequency.setValueAtTime(600,audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(200,audioCtx.currentTime+0.1);
-  g.gain.setValueAtTime(0.2,audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.1);
+  const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime+0.1);
+  g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.1);
   osc.connect(g).connect(audioCtx.destination);
   osc.start(); osc.stop(audioCtx.currentTime+0.1);
 }
 
 function playExplosionSound(){
   if(audioCtx.state==="suspended") audioCtx.resume();
-  const now=audioCtx.currentTime,dur=0.4;
+  const now=audioCtx.currentTime, dur=0.4;
   const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*dur,audioCtx.sampleRate);
   const d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
-  const src=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();
-  src.buffer=buf;
-  f.type="lowpass";
-  f.frequency.setValueAtTime(800,now);
-  f.frequency.exponentialRampToValueAtTime(200,now+dur);
-  g.gain.setValueAtTime(0.8,now);
-  g.gain.exponentialRampToValueAtTime(0.001,now+dur);
+  for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1)*(1 - i/d.length);
+  const src=audioCtx.createBufferSource(), f=audioCtx.createBiquadFilter(), g=audioCtx.createGain();
+  src.buffer = buf;
+  f.type = "lowpass";
+  f.frequency.setValueAtTime(800, now);
+  f.frequency.exponentialRampToValueAtTime(200, now+dur);
+  g.gain.setValueAtTime(0.8, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now+dur);
   src.connect(f).connect(g).connect(audioCtx.destination);
   src.start(now); src.stop(now+dur);
 }
 
 function playHitSound(){
   if(audioCtx.state==="suspended") audioCtx.resume();
-  const now=audioCtx.currentTime,dur=0.6;
+  const now=audioCtx.currentTime, dur=0.6;
   const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*dur,audioCtx.sampleRate);
   const d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
-  const src=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();
-  src.buffer=buf;
-  f.type="lowpass";
-  f.frequency.setValueAtTime(1200,now);
-  f.frequency.exponentialRampToValueAtTime(300,now+dur);
-  g.gain.setValueAtTime(1,now);
-  g.gain.exponentialRampToValueAtTime(0.001,now+dur);
+  for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1)*(1 - i/d.length);
+  const src=audioCtx.createBufferSource(), f=audioCtx.createBiquadFilter(), g=audioCtx.createGain();
+  src.buffer = buf;
+  f.type = "lowpass";
+  f.frequency.setValueAtTime(1200, now);
+  f.frequency.exponentialRampToValueAtTime(300, now+dur);
+  g.gain.setValueAtTime(1, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now+dur);
   src.connect(f).connect(g).connect(audioCtx.destination);
   src.start(now); src.stop(now+dur);
 }
@@ -211,12 +209,12 @@ function playHitSound(){
 function playUfoHitSound(){
   if(audioCtx.state==="suspended") audioCtx.resume();
   const now=audioCtx.currentTime;
-  const osc=audioCtx.createOscillator(),g=audioCtx.createGain();
+  const osc=audioCtx.createOscillator(), g=audioCtx.createGain();
   osc.type="square";
-  osc.frequency.setValueAtTime(800,now);
-  osc.frequency.exponentialRampToValueAtTime(1200,now+0.2);
-  g.gain.setValueAtTime(0.2,now);
-  g.gain.exponentialRampToValueAtTime(0.001,now+0.2);
+  osc.frequency.setValueAtTime(800, now);
+  osc.frequency.exponentialRampToValueAtTime(1200, now+0.2);
+  g.gain.setValueAtTime(0.2, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now+0.2);
   osc.connect(g).connect(audioCtx.destination);
   osc.start(now); osc.stop(now+0.2);
 }
@@ -226,14 +224,14 @@ function handlePlayerHit(x,y){
   if(gameOver) return;
   addExplosion(x,y);
   playHitSound();
-  lives=Math.max(0,lives-1);
-  player.blink=30;
+  lives = Math.max(0,lives-1);
+  player.blink = 30;
   if(lives===0){
-    gameOver=true;
+    gameOver = true;
     if(ufoOsc){ufoOsc.stop();ufoOsc=null;ufoGain=null}
-    localStorage.setItem("lastscore",score);
-    menuHighscore.textContent=highscore.toString().padStart(4,"0");
-    menuLastscore.textContent=score.toString().padStart(4,"0");
+    localStorage.setItem("lastscore", score);
+    menuHighscore.textContent = highscore.toString().padStart(4,"0");
+    menuLastscore.textContent = score.toString().padStart(4,"0");
     const delay = playGameOverMelody()*1000 + 200;
     setTimeout(()=>{
       container.style.display="none";
@@ -245,45 +243,56 @@ function handlePlayerHit(x,y){
 
 // ==== GAME INIT ====
 function startGame(){
-  gameOver=false;
-  score=0;
-  lives=3;
-  highscore=+localStorage.getItem("highscore")||0;
-  wave=1;
-  enemySpeed=1;
-  enemyDirection=1;
-  mysteryShip=null;
-  mysteryTimer=getRandomMysteryFrames();
-  dropCooldown=0;
+  gameOver    = false;
+  score       = 0;
+  lives       = 3;
+  highscore   = +localStorage.getItem("highscore")||0;
+  wave        = 1;
+  enemySpeed     = 1;
+  enemyDirection = 1;
+  mysteryShip    = null;
+  mysteryTimer   = getRandomMysteryFrames();
+  dropCooldown   = 0;
   if(ufoOsc){ufoOsc.stop();ufoOsc=null;ufoGain=null}
 
-  player={x:GAME_W/2-25,y:GAME_H-60,width:50,height:20,speed:5,bullets:[],cooldown:0,blink:0};
-  enemies=[]; enemyBullets=[]; shields=[]; explosions=[]; popups=[];
+  player = {
+    x: GAME_W/2 - 25,
+    y: GAME_H - 60,
+    width: 50, height: 20,
+    speed: 5,
+    bullets: [], cooldown: 0,
+    blink: 0
+  };
+  enemies      = [];
+  enemyBullets = [];
+  shields      = [];
+  explosions   = [];
+  popups       = [];
 
   initLevel();
-  lastTime=performance.now();
+  lastTime = performance.now();
   requestAnimationFrame(gameLoop);
 }
 
-// ==== LEVEL/SHIELDS ====
-function initLevel(){ createEnemies(); shields=createShields(); }
+// ==== LEVEL & SHIELDS ====
+function initLevel(){ createEnemies(); shields = createShields(); }
 function createEnemies(){
   enemies=[]; const rows=2+wave, cols=6+wave; enemyCols=cols;
   const w=FRAME_W*2, h=FRAME_H*2, gapX=GAME_W/cols;
   for(let r=0;r<rows;r++){
     for(let c=0;c<cols;c++){
-      enemies.push({x:gapX*c+(gapX-w)/2, y:40*r+30, width:w, height:h, alive:true});
+      enemies.push({ x: gapX*c+(gapX-w)/2, y:40*r+30, width:w, height:h, alive:true });
     }
   }
 }
 function createShields(){
-  const arr=[],COUNT=5,SW=60,SH=30,C=6,R=4;
-  const cw=SW/C,ch=SH/R,totalW=COUNT*SW,gap=(GAME_W-totalW)/(COUNT+1);
+  const arr=[], COUNT=5, SW=60, SH=30, C=6, R=4;
+  const cw=SW/C, ch=SH/R, totalW=COUNT*SW, gap=(GAME_W-totalW)/(COUNT+1);
   for(let i=0;i<COUNT;i++){
     const bx=gap*(i+1)+SW*i, by=GAME_H-120;
     for(let ry=0;ry<R;ry++){
       for(let cx=0;cx<C;cx++){
-        arr.push({x:bx+cx*cw,y:by+ry*ch,width:cw,height:ch});
+        arr.push({ x:bx+cx*cw, y:by+ry*ch, width:cw, height:ch });
       }
     }
   }
@@ -292,13 +301,13 @@ function createShields(){
 
 // ==== MYSTERY UFO ====
 function spawnMystery(){
-  mysteryShip={x:-50,y:20,width:40,height:16,speed:2+wave*0.2};
+  mysteryShip={ x:-50, y:20, width:40, height:16, speed:2 + wave*0.2 };
   audioCtx.resume().then(()=>{
     ufoOsc=audioCtx.createOscillator();
     ufoGain=audioCtx.createGain();
     ufoOsc.type="square";
-    ufoOsc.frequency.setValueAtTime(200,audioCtx.currentTime);
-    ufoGain.gain.setValueAtTime(0.1,audioCtx.currentTime);
+    ufoOsc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    ufoGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
     ufoOsc.connect(ufoGain).connect(audioCtx.destination);
     ufoOsc.start();
   });
@@ -308,9 +317,9 @@ function spawnMystery(){
 function shoot(){
   if(player.cooldown>0) return;
   player.bullets.push({
-    x:player.x+player.width/2-2,
-    y:player.y,
-    width:SPRITES.bullet.w*2,
+    x: player.x + player.width/2 - 2,
+    y: player.y,
+    width: SPRITES.bullet.w*2,
     height:SPRITES.bullet.h*2,
     speed:7
   });
@@ -318,7 +327,11 @@ function shoot(){
   playShootSound();
 }
 function enemyShoot(e){
-  enemyBullets.push({x:e.x+e.width/2-2,y:e.y+e.height,width:4,height:10,speed:3});
+  enemyBullets.push({
+    x: e.x + e.width/2 - 2,
+    y: e.y + e.height,
+    width:4, height:10, speed:3
+  });
 }
 
 // ==== MAIN LOOP ====
@@ -338,12 +351,12 @@ function update(delta){
   if(!mysteryShip){
     mysteryTimer--; if(mysteryTimer<=0) spawnMystery();
   } else {
-    mysteryShip.x+=mysteryShip.speed*delta*60;
+    mysteryShip.x += mysteryShip.speed*delta*60;
     if(ufoOsc){
-      const f=200+300*(mysteryShip.x/GAME_W);
-      ufoOsc.frequency.setValueAtTime(f,audioCtx.currentTime);
+      const freq = 200 + 300*(mysteryShip.x / GAME_W);
+      ufoOsc.frequency.setValueAtTime(freq, audioCtx.currentTime);
     }
-    if(mysteryShip.x>GAME_W){
+    if(mysteryShip.x > GAME_W){
       mysteryShip=null; mysteryTimer=getRandomMysteryFrames();
       if(ufoOsc){ufoOsc.stop();ufoOsc=null;ufoGain=null}
     }
@@ -354,7 +367,7 @@ function update(delta){
   let needDrop=false;
   enemies.forEach(e=>{
     if(!e.alive) return;
-    e.x+=enemyDirection*enemySpeed*delta*60;
+    e.x += enemyDirection*enemySpeed*delta*60;
     if(e.x<=0||e.x+e.width>=GAME_W) needDrop=true;
   });
   if(needDrop&&dropCooldown===0){
@@ -368,46 +381,48 @@ function update(delta){
   }
 
   // player
-  if(keys["ArrowLeft"]&&player.x>0) player.x-=player.speed*delta*60;
-  if(keys["ArrowRight"]&&player.x+player.width<GAME_W) player.x+=player.speed*delta*60;
+  if(keys["ArrowLeft"]&&player.x>0)                 player.x -= player.speed*delta*60;
+  if(keys["ArrowRight"]&&player.x+player.width<GAME_W) player.x += player.speed*delta*60;
   if(keys[" "]) shoot();
   if(player.cooldown>0) player.cooldown--;
 
   // bullets
-  player.bullets.forEach((b,i)=>{ b.y-=b.speed*delta*60; if(b.y<0)player.bullets.splice(i,1); });
-  enemyBullets.forEach((b,i)=>{ b.y+=b.speed*delta*60; if(b.y>GAME_H)enemyBullets.splice(i,1); });
+  player.bullets.forEach((b,i)=>{ b.y -= b.speed*delta*60; if(b.y<0) player.bullets.splice(i,1); });
+  enemyBullets.forEach((b,i)=>{ b.y += b.speed*delta*60; if(b.y>GAME_H) enemyBullets.splice(i,1); });
 
   // explosions
-  explosions.forEach((ex,i)=>{ if(++ex.frame>explosionDuration)explosions.splice(i,1); });
+  explosions.forEach((ex,i)=>{ if(++ex.frame>explosionDuration) explosions.splice(i,1); });
 
   handleCollisions();
 
-  // reach player
+  // enemies reach player
   enemies.forEach(e=>{
     if(e.alive&&e.y+e.height>=player.y){
       e.alive=false;
-      handlePlayerHit(e.x+e.width/2,e.y+e.height/2);
+      handlePlayerHit(e.x+e.width/2, e.y+e.height/2);
     }
   });
 
   // next wave
-  if(enemies.every(e=>!e.alive)){
-    wave++; enemySpeed=1+(wave-1)*0.5; initLevel();
-  }
+  if(enemies.every(e=>!e.alive)){ wave++; enemySpeed = 1 + (wave-1)*0.5; initLevel(); }
 }
 
 // ==== COLLISIONS ====
 function handleCollisions(){
   // player→mystery
-  player.bullets=player.bullets.filter(b=>{
-    if(mysteryShip&&b.x<mysteryShip.x+mysteryShip.width&&b.x+b.width>mysteryShip.x&&b.y<mysteryShip.y+mysteryShip.height&&b.y+b.height>mysteryShip.y){
-      const bonus=(1+Math.floor(Math.random()*5))*50;
-      score+=bonus;
-      if(score>highscore){highscore=score;localStorage.setItem("highscore",highscore);}
+  player.bullets = player.bullets.filter(b=>{
+    if(mysteryShip &&
+       b.x<mysteryShip.x+mysteryShip.width &&
+       b.x+b.width>mysteryShip.x &&
+       b.y<mysteryShip.y+mysteryShip.height &&
+       b.y+b.height>mysteryShip.y){
+      const bonus = (1 + Math.floor(Math.random()*5))*50;
+      score += bonus;
+      if(score>highscore){ highscore=score; localStorage.setItem("highscore",highscore); }
       playUfoHitSound();
-      addPopup(b.x,b.y,`+${bonus}`);
-      addExplosion(b.x,b.y);
-      mysteryShip=null;mysteryTimer=getRandomMysteryFrames();
+      addPopup(b.x, b.y, `+${bonus}`);
+      addExplosion(b.x, b.y);
+      mysteryShip=null; mysteryTimer=getRandomMysteryFrames();
       if(ufoOsc){ufoOsc.stop();ufoOsc=null;ufoGain=null}
       return false;
     }
@@ -415,11 +430,13 @@ function handleCollisions(){
   });
 
   // player→enemies
-  player.bullets=player.bullets.filter(b=>{
+  player.bullets = player.bullets.filter(b=>{
     for(let e of enemies){
-      if(e.alive&&b.x<e.x+e.width&&b.x+b.width>e.x&&b.y<e.y+e.height&&b.y+b.height>e.y){
-        e.alive=false;score+=10;
-        if(score>highscore){highscore=score;localStorage.setItem("highscore",highscore);}
+      if(e.alive &&
+         b.x<e.x+e.width && b.x+b.width>e.x &&
+         b.y<e.y+e.height&& b.y+b.height>e.y){
+        e.alive=false; score+=10;
+        if(score>highscore){ highscore=score; localStorage.setItem("highscore",highscore); }
         addExplosion(b.x,b.y);
         return false;
       }
@@ -428,15 +445,18 @@ function handleCollisions(){
   });
 
   // enemy→player
-  enemyBullets=enemyBullets.filter(b=>{
-    if(b.x<player.x+player.width&&b.x+b.width>player.x&&b.y<player.y+player.height&&b.y+b.height>player.y){
-      handlePlayerHit(player.x+player.width/2,player.y);
+  enemyBullets = enemyBullets.filter(b=>{
+    if(b.x<player.x+player.width &&
+       b.x+b.width>player.x &&
+       b.y<player.y+player.height &&
+       b.y+b.height>player.y){
+      handlePlayerHit(player.x+player.width/2, player.y);
       return false;
     }
     return true;
   });
 
-  // → shields
+  // bullets→shields
   function hitShields(arr,list){
     return list.filter(b=>{
       for(let i=0;i<arr.length;i++){
@@ -450,43 +470,38 @@ function handleCollisions(){
       return true;
     });
   }
-  player.bullets=hitShields(shields,player.bullets);
-  enemyBullets=hitShields(shields,enemyBullets);
+  player.bullets = hitShields(shields, player.bullets);
+  enemyBullets  = hitShields(shields, enemyBullets);
 }
 
 // ==== DRAW ====
 function draw(){
-  if (gameOver) {
-    drawGameOverText();
-    return;
-  }
+  if(gameOver){ drawGameOverText(); return; }
 
-  ctx.clearRect(0, 0, GAME_W, GAME_H);
+  ctx.clearRect(0,0,GAME_W,GAME_H);
 
-  // HUD styling
+  // HUD
   ctx.fillStyle    = "red";
   ctx.font         = "16px monospace";
   ctx.textBaseline = "top";
+  const hudY = 10;
 
-  const hudY   = 10;
-  const labelX = 30;  // moved further right
-
-  // Draw “SCORE:” then the number
+  // label + number
+  const labelX = 30;
   ctx.fillText("SCORE:", labelX, hudY);
   const numX = labelX + ctx.measureText("SCORE: ").width;
-  ctx.fillText(score.toString().padStart(4, "0"), numX, hudY);
+  ctx.fillText(score.toString().padStart(4,"0"), numX, hudY);
 
-  // Centered HI-SCORE
-  const hiText = `HI-SCORE: ${highscore.toString().padStart(4, "0")}`;
+  // hi‐score
+  const hiText = `HI-SCORE: ${highscore.toString().padStart(4,"0")}`;
   const hiX    = GAME_W/2 - ctx.measureText(hiText).width/2;
   ctx.fillText(hiText, hiX, hudY);
 
-  // LIVES, inset 30px from the right
+  // lives
   const livesText = `LIVES: ${lives}`;
   const livesX    = GAME_W - ctx.measureText(livesText).width - 30;
   ctx.fillText(livesText, livesX, hudY);
 
-  // ... then the rest of your draws ...
   drawMysteryShip();
   drawEnemies();
   drawPlayer();
@@ -495,6 +510,10 @@ function draw(){
   drawExplosions();
   drawPopups();
 }
+
+// ==== DRAW HELPERS ====
+// (same as before)
+
 
 // ==== DRAW HELPERS ====
 function drawPlayer(){
