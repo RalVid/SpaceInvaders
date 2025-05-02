@@ -461,35 +461,32 @@ function draw(){
     return;
   }
 
-  // 1) clear entire canvas
   ctx.clearRect(0, 0, GAME_W, GAME_H);
 
-  // 2) draw the green cabinet frame flush to the edges
-  ctx.strokeStyle = "#0f0";
-  ctx.lineWidth   = 4;
-  ctx.strokeRect(0, 0, GAME_W, GAME_H);
-
-  // 3) draw HUD text *inside* that frame:
+  // HUD styling
   ctx.fillStyle    = "red";
   ctx.font         = "16px monospace";
   ctx.textBaseline = "top";
-  const hudY = 4 + 8;  // 4px stroke + 8px padding = 12px from very top
 
-  // now we can safely draw "SCORE:" at x=10
-  ctx.fillText(
-    `SCORE: ${score.toString().padStart(4,"0")}`,
-    10, hudY
-  );
+  const hudY   = 10;
+  const labelX = 30;  // moved further right
 
-  // center the high‐score
-  const hiText = `HI-SCORE: ${highscore.toString().padStart(4,"0")}`;
+  // Draw “SCORE:” then the number
+  ctx.fillText("SCORE:", labelX, hudY);
+  const numX = labelX + ctx.measureText("SCORE: ").width;
+  ctx.fillText(score.toString().padStart(4, "0"), numX, hudY);
+
+  // Centered HI-SCORE
+  const hiText = `HI-SCORE: ${highscore.toString().padStart(4, "0")}`;
   const hiX    = GAME_W/2 - ctx.measureText(hiText).width/2;
   ctx.fillText(hiText, hiX, hudY);
 
-  // lives at right
-  ctx.fillText(`LIVES: ${lives}`, GAME_W - 110, hudY);
+  // LIVES, inset 30px from the right
+  const livesText = `LIVES: ${lives}`;
+  const livesX    = GAME_W - ctx.measureText(livesText).width - 30;
+  ctx.fillText(livesText, livesX, hudY);
 
-  // 4) draw everything else
+  // ... then the rest of your draws ...
   drawMysteryShip();
   drawEnemies();
   drawPlayer();
@@ -498,8 +495,6 @@ function draw(){
   drawExplosions();
   drawPopups();
 }
-
-
 
 // ==== DRAW HELPERS ====
 function drawPlayer(){
