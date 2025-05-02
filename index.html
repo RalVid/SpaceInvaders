@@ -14,9 +14,9 @@
       font-family: 'Press Start 2P', monospace;
       text-align: center;
       overflow: hidden;
-      position: relative;
       height: 100vh;
     }
+
     /* MAIN MENU */
     #menu {
       position: absolute;
@@ -41,59 +41,59 @@
       color: #000;
       border: 2px solid #0f0;
       cursor: pointer;
-      text-shadow: none;
     }
+
+    /* CONTAINER for canvas + controls */
+    #game-container {
+      width: 500px;
+      margin: 0 auto;
+      position: relative;
+    }
+
     /* GAME CANVAS */
-    canvas {
+    #gameCanvas {
       display: none;
-      margin: 20px auto;
+      width: 100%;      /* will be scaled responsively by your JS */
+      height: auto;
       background: #000;
       border: 4px solid #0f0;
       box-sizing: border-box;
     }
-    /* MOBILE CONTROLS (hidden by default) */
+
+    /* MOBILE CONTROLS (under canvas) */
     #mobile-controls {
       display: none;
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
+      margin-top: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      pointer-events: none;  /* until .show is added */
     }
     #mobile-controls.show {
-      display: block;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: auto;
     }
-    /* Buttons styling */
-    #shootBtn,
-    #leftBtn,
-    #rightBtn {
+    #mobile-controls button {
       background: transparent;
       border: 2px solid #0f0;
       color: #0f0;
       font-family: 'Press Start 2P', monospace;
       font-size: 18px;
-      pointer-events: auto;
+      padding: 8px 12px;
+      cursor: pointer;
+      flex: none;
     }
-    /* Fire button on left */
-    #shootBtn {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      padding: 12px;
-    }
-    /* Steering buttons on right */
+    /* cluster left/right together */
     .steer-buttons {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
+      display: flex;
+      gap: 8px;
     }
-    .steer-buttons button {
-      margin-left: 12px;
-      padding: 12px;
-    }
-    /* Show controls only on small screens */
+
+    /* Only show controls on small screens */
     @media (max-width: 600px) {
       #mobile-controls.show {
-        display: block;
+        display: flex;
       }
     }
   </style>
@@ -103,23 +103,28 @@
   <div id="menu">
     <h1>SPACE INVADERS</h1>
     <p>HIGH SCORE: <span id="menuHighscore">0000</span></p>
-    <p>LAST SCORE: <span id="menuLastscore">0000</span></p>
+    <p>LAST SCORE:  <span id="menuLastscore">0000</span></p>
     <button id="startBtn">INSERT COIN</button>
   </div>
 
-  <!-- HIDDEN SPRITESHEETS -->
-  <img id="sprites"      src="assets/spritesheet.png"     alt="" style="display:none">
-  <img id="enemySprites" src="assets/invaders_custom.png" alt="" style="display:none">
+  <!-- GAME + CONTROLS WRAPPER -->
+  <div id="game-container">
+    <!-- HIDDEN SPRITESHEETS -->
+    <img id="sprites"      src="assets/spritesheet.png"     alt="" style="display:none">
+    <img id="enemySprites" src="assets/invaders_custom.png" alt="" style="display:none">
 
-  <!-- GAME CANVAS -->
-  <canvas id="gameCanvas" width="500" height="600"></canvas>
+    <!-- GAME CANVAS -->
+    <canvas id="gameCanvas" width="500" height="600"></canvas>
 
-  <!-- MOBILE CONTROLS -->
-  <div id="mobile-controls">
-    <button id="shootBtn">▲</button>
-    <div class="steer-buttons">
-      <button id="leftBtn">◀</button>
-      <button id="rightBtn">▶</button>
+    <!-- MOBILE CONTROLS (will show .show via JS when game starts) -->
+    <div id="mobile-controls">
+      <!-- Shoot on left -->
+      <button id="shootBtn">▲</button>
+      <!-- Steer on right -->
+      <div class="steer-buttons">
+        <button id="leftBtn">◀</button>
+        <button id="rightBtn">▶</button>
+      </div>
     </div>
   </div>
 
