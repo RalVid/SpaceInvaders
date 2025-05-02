@@ -6,87 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-    body {
-      margin: 0;
-      background: #000;
-      color: #0f0;
-      font-family: 'Press Start 2P', monospace;
-      overflow: hidden;
-      text-align: center;
-    }
-
-    /* MAIN MENU */
-    #menu {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-    }
-    #menu h1 { font-size: 24px; margin-bottom: 20px; text-shadow: 0 0 8px #0f0; }
-    #menu p  { margin: 8px 0; font-size: 14px; }
-    #menu button {
-      margin-top: 16px;
-      padding: 12px 24px;
-      font-size: 12px;
-      background: #0f0;
-      color: #000;
-      border: 2px solid #0f0;
-      cursor: pointer;
-    }
-
-    /* GAME + CONTROLS WRAPPER */
-    #game-container {
-      display: none;
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 500px; height: 600px;
-      transform-origin: top left;
-    }
-
-    /* Canvas no longer has CSS border */
-	#gameCanvas {
-  	width: 500px;
-  	height: 600px;
-  	background: #000;
-
-  	box-sizing: border-box;
-}
-
-    /* MOBILE CONTROLS INSIDE FRAME */
-    #mobile-controls {
-      position: absolute;
-      bottom: 4px;
-      left: 4px;
-      width: calc(100% - 8px);
-      display: none;
-      justify-content: space-between;
-      pointer-events: none;
-      box-sizing: border-box;
-    }
-    #mobile-controls.show {
-      display: flex;
-      pointer-events: auto;
-    }
-    #mobile-controls button {
-      background: transparent;
-      border: 2px solid #0f0;
-      color: #0f0;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 18px;
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-    .steer-buttons { display: flex; gap: 8px; }
-
-    @media (max-width: 600px) {<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Space Invaders Cabinet Style</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
     body {
       margin: 0;
       background: #000;
@@ -194,44 +113,6 @@
       <div id="fireZone"  class="touch-zone"></div>
       <div id="leftZone"  class="touch-zone"></div>
       <div id="rightZone" class="touch-zone"></div>
-    </div>
-  </div>
-
-  <script src="game.js"></script>
-</body>
-</html>
-
-      #mobile-controls.show {
-        display: flex;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- MAIN MENU -->
-  <div id="menu">
-    <h1>SPACE INVADERS</h1>
-    <p>HIGH SCORE: <span id="menuHighscore">0000</span></p>
-    <p>LAST SCORE:  <span id="menuLastscore">0000</span></p>
-    <button id="startBtn">INSERT COIN</button>
-  </div>
-
-  <!-- GAME + CONTROLS WRAPPER -->
-  <div id="game-container">
-    <img id="sprites"      src="assets/spritesheet.png"     alt="" style="display:none">
-    <img id="enemySprites" src="assets/invaders_custom.png" alt="" style="display:none">
-
-    <!-- the game canvas -->
-    <canvas id="gameCanvas" width="500" height="600"></canvas>
-
-    <!-- mobile touch buttons -->
-    <div id="mobile-controls">
-      <button id="shootBtn">▲</button>
-      <div class="steer-buttons">
-        <button id="leftBtn">◀</button>
-        <button id="rightBtn">▶</button>
-      </div>
     </div>
   </div>
 
