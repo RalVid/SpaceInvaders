@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Space Invaders Cabinet Style</title>
+  <title>Space Invaders</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
       background: #000;
-      color: #0f0;
-      font-family: 'Press Start 2P', monospace;
       overflow: hidden;
-      text-align: center;
+      font-family: 'Press Start 2P', monospace;
+      color: #0f0;
     }
 
     /* MAIN MENU */
@@ -20,7 +22,8 @@
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 10;
+      text-align: center;
+      z-index: 2;
     }
     #menu h1 {
       font-size: 24px;
@@ -41,7 +44,7 @@
       cursor: pointer;
     }
 
-    /* GAME + CONTROLS WRAPPER */
+    /* GAME WRAPPER */
     #game-container {
       display: none;
       position: absolute;
@@ -50,31 +53,43 @@
       transform-origin: top left;
     }
 
-    /* GAME CANVAS */
+    /* CANVAS */
     #gameCanvas {
-      width: 500px; height: 600px;
+      width: 500px;
+      height: 600px;
       background: #000;
-      border: 4px solid #0f0;
-      box-sizing: border-box;
+      outline: 2px solid #0f0;
       display: block;
+      box-sizing: border-box;
     }
 
-    /* MOBILE TOUCH ZONES */
+    /* TOUCH CONTROLS */
     #mobile-controls {
       position: absolute;
-      bottom: 4px; left: 4px;
-      width: calc(100% - 8px); height: 80px;
+      bottom: 10px; left: 0;
+      width: 100%;
       display: none;
-      pointer-events: none;
       justify-content: space-between;
+      padding: 0 20px;
+      pointer-events: none;
     }
     #mobile-controls.show {
       display: flex;
       pointer-events: auto;
     }
 
+    /* tighten & shift the inner left/right pair */
+    #mobile-controls > div {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-left: -10px; /* moved 10px toward center */
+      margin-right: 20px; /* moved 20px toward center */
+
+    }
+
     .touch-zone {
-      width: 80px; height: 80px;
+      width: 48px; height: 48px;
       background-size: contain;
       background-repeat: no-repeat;
       opacity: 0.6;
@@ -82,14 +97,9 @@
     .touch-zone:active {
       opacity: 1;
     }
-
-    #fireZone  { background-image: url('assets/btn_fire.png'); }
-    #leftZone  { background-image: url('assets/btn_left.png'); }
-    #rightZone { background-image: url('assets/btn_right.png'); }
-
-    @media (max-width: 600px) {
-      #mobile-controls.show { display: flex; }
-    }
+    #shootBtn  { background-image: url('assets/btn_fire.png'); }
+    #leftBtn   { background-image: url('assets/btn_left.png'); }
+    #rightBtn  { background-image: url('assets/btn_right.png'); }
   </style>
 </head>
 <body>
@@ -102,7 +112,7 @@
     <button id="startBtn">INSERT COIN</button>
   </div>
 
-  <!-- GAME + TOUCH ZONES -->
+  <!-- GAME + CONTROLS -->
   <div id="game-container">
     <img id="sprites"      src="assets/spritesheet.png"     alt="" style="display:none">
     <img id="enemySprites" src="assets/invaders_custom.png" alt="" style="display:none">
@@ -110,9 +120,11 @@
     <canvas id="gameCanvas" width="500" height="600"></canvas>
 
     <div id="mobile-controls">
-      <div id="fireZone"  class="touch-zone"></div>
-      <div id="leftZone"  class="touch-zone"></div>
-      <div id="rightZone" class="touch-zone"></div>
+      <div id="shootBtn" class="touch-zone"></div>
+      <div>
+        <div id="leftBtn"  class="touch-zone"></div>
+        <div id="rightBtn" class="touch-zone"></div>
+      </div>
     </div>
   </div>
 
