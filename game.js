@@ -62,8 +62,8 @@ function drawGameOverText() {
 function resizeCanvas() {
   const vw    = window.innerWidth;
   const vh    = window.innerHeight;
-  // clamp between “never shrink below fit” and max 1.4× upscale
-  const scale = Math.min(1.4, vw / GAME_W, vh / GAME_H);
+  // clamp between “never shrink below fit” and max 1.2× upscale
+  const scale = Math.min(1.2, vw / GAME_W, vh / GAME_H);
   container.style.transform = `translate(-50%,-50%) scale(${scale})`;
 }
 window.addEventListener("resize", resizeCanvas);
