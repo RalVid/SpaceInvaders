@@ -93,6 +93,14 @@
       background-size: contain;
       background-repeat: no-repeat;
       opacity: 0.6;
+      /* prevent iOS callout */
+      -webkit-touch-callout: none;
+
+      /* prevent Android/desktop selection */
+     -webkit-user-select: none;
+     -moz-user-select: none;
+     -ms-user-select: none;
+     user-select: none;
     }
     .touch-zone:active {
       opacity: 1;
