@@ -99,6 +99,10 @@ function bindZone(el, key) {
 bindZone(leftBtn,  "ArrowLeft");
 bindZone(rightBtn, "ArrowRight");
 bindZone(shootBtn, " ");
+[ leftBtn, rightBtn, shootBtn ].forEach(el => {
+  // prevent the “long-press” context menu
+  el.addEventListener("contextmenu", e => e.preventDefault());
+});
 
 // ==== UNLOCK AUDIO ====
 function unlockAudio(){
