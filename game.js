@@ -60,10 +60,17 @@ function drawGameOverText() {
 
 // ==== RESPONSIVE SCALING ====
 function resizeCanvas() {
-  const vw = window.innerWidth, vh = window.innerHeight;
-  // clamp at 1× to never upscale above native size
-  const scale = Math.min(1, vw / GAME_W, vh / GAME_H);
-  container.style.transform = `translate(-50%,-50%) scale(${scale})`;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  // clamp scale to at most 1.4×, and shrink to fit
+  const scale = Math.min(1.4, vw / GAME_W, vh / GAME_H);
+
+  // compute pixel offsets to center the *scaled* game
+  const x = (vw - GAME_W * scale) / 2;
+  const y = (vh - GAME_H * scale) / 2;
+
+  // translate then scale
+  container.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
@@ -475,16 +482,16 @@ function draw(){
 
   // Score
   const scoreText = `SCORE: ${pad4(score)}`;
-  ctx.fillText(scoreText, 30, 10);
+  ctx.fillText(scoreText, 70, 10);
 
   // Level
   const levelText = `LEVEL: ${wave}`;
-  const levelX = 30 + ctx.measureText(scoreText + "  ").width;
+  const levelX = 60 + ctx.measureText(scoreText + "  ").width;
   ctx.fillText(levelText, levelX, 10);
 
   // Lives
   const livesText = `LIVES: ${lives}`;
-  const livesX    = GAME_W - ctx.measureText(livesText).width - 30;
+  const livesX    = GAME_W - ctx.measureText(livesText).width +20;
   ctx.fillText(livesText, livesX, 10);
 
   // Draw entities
