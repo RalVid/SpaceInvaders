@@ -221,16 +221,28 @@ function handlePlayerHit(x,y){
   lives = Math.max(0, lives - 1);
   player.blink = 30;
   if (lives === 0) {
-    gameOver = true;
-    if (ufoOsc) { ufoOsc.stop(); ufoOsc = null; ufoGain = null; }
-    localStorage.setItem("lastscore", score);
-    menuLastscore.textContent = score.toString().padStart(4,"0");
-    const delay = playGameOverMelody() * 1000 + 200;
-    setTimeout(() => {
-      container.style.display = "none";
-      menu.style.display = "block";
-      mobileControls.classList.remove("show");
-    }, delay);
+  gameOver = true;
+  if (ufoOsc) { ufoOsc.stop(); ufoOsc = null; ufoGain = null; }
+
+  // update last score immediately
+  localStorage.setItem("lastscore", score);
+  menuLastscore.textContent = score.toString().padStart(4, "0");
+
+  // check for a new high score
+  if (score > highscore) {
+    highscore = score;
+    localStorage.setItem("highscore", highscore.toString());
+  }
+
+  const delay = playGameOverMelody() * 1000 + 200;
+  setTimeout(() => {
+    container.style.display = "none";
+    menu.style.display = "block";
+    mobileControls.classList.remove("show");
+
+    // now that the menu is visible, update the displayed high score
+    menuHighscore.textContent = highscore.toString().padStart(4, "0");
+  }, delay);
   }
 }
 
