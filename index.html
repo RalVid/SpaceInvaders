@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <title>Space Invaders</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+    rel="stylesheet"
+  >
   <style>
     html, body {
       margin: 0; padding: 0;
@@ -21,76 +24,82 @@
       transform: translate(-50%, -50%);
       text-align: center; z-index: 2;
     }
-    #menu h1 { font-size: 24px; margin-bottom: 20px; text-shadow: 0 0 8px #0f0; }
-    #menu p  { margin: 8px 0; font-size: 14px; }
+    #menu h1 { font-size: 24px; margin-bottom: 20px; text-shadow: 0 0 8px #0f0 }
+    #menu p   { margin: 8px 0; font-size: 14px }
     #menu button {
-      margin-top: 16px; padding: 12px 24px;
-      font-size: 12px; background: #0f0; color: #000;
-      border: 2px solid #0f0; cursor: pointer;
+      margin-top: 16px; padding: 12px 24px; font-size: 12px;
+      background: #0f0; color: #000; border: 2px solid #0f0;
+      cursor: pointer;
     }
 
     /* GAME WRAPPER */
     #game-container {
       display: none;
       position: absolute;
-      top: 0;       /* ← no longer 50% */
-      left: 0;      /* ← no longer 50% */
-      width: 500px;
-      height: 600px;
+      top: 0; left: 0;
+      width: 500px; height: 600px;
       transform-origin: top left;
+      overflow: visible;
     }
 
-    /* CANVAS */
+    /* CANVAS (extra 50px for control margin) */
     #gameCanvas {
-      width: 500px; height: 600px;
+      width: 500px;
+      height: 650px;     /* ↑ 50px extra for controls */
       background: #000;
       outline: 2px solid #0f0;
-      display: block; box-sizing: border-box;
+      display: block;
+      box-sizing: border-box;
     }
 
     /* TOUCH CONTROLS */
     #mobile-controls {
       position: absolute;
-      bottom: 10px; left: 0;
-      width: 100%;
+      bottom: -120px;    /* sits 120px below top of game-container */
+      left: 0; right: 0;
       display: none;
       justify-content: space-between;
+      align-items: center;
       padding: 0 20px;
       pointer-events: none;
     }
     #mobile-controls.show {
-      display: flex; pointer-events: auto;
-    }
-    /* tighten & shift the inner left/right pair */
-    #mobile-controls > div {
       display: flex;
-      gap: 6px;
-      align-items: center;
-      margin-left: -10px;
-      margin-right: 20px;
+      pointer-events: auto;
     }
 
+    .steer-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* round button style */
     .touch-zone {
       width: 48px; height: 48px;
-      background-size: contain;
-      background-repeat: no-repeat;
-      opacity: 0.6;
-
-      /* prevent iOS callout */
+      border: 2px solid #0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #0f0;
+      background: rgba(0,0,0,0.3);
       -webkit-touch-callout: none;
-      /* prevent selection on all platforms */
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
       user-select: none;
-      /* disable default touch behaviors (pinch/scroll) */
       touch-action: none;
     }
-    .touch-zone:active { opacity: 1; }
+    .touch-zone:active {
+      background: rgba(0,255,0,0.2);
+    }
 
-    #shootBtn  { background-image: url('assets/btn_fire.png'); }
-    #leftBtn   { background-image: url('assets/btn_left.png'); }
-    #rightBtn  { background-image: url('assets/btn_right.png'); }
+    /* make the fire button red */
+    #shootBtn {
+      border-color: red;
+      color: red;
+    }
+    #shootBtn:active {
+      background: rgba(255,0,0,0.2);
+    }
   </style>
 </head>
 <body>
@@ -111,10 +120,13 @@
     <canvas id="gameCanvas" width="500" height="600"></canvas>
 
     <div id="mobile-controls">
-      <div id="shootBtn" class="touch-zone"></div>
-      <div>
-        <div id="leftBtn"  class="touch-zone"></div>
-        <div id="rightBtn" class="touch-zone"></div>
+      <!-- Fire on the left -->
+      <div id="shootBtn" class="touch-zone">▲</div>
+
+      <!-- Steering on the right -->
+      <div class="steer-group">
+        <div id="leftBtn"  class="touch-zone">◀</div>
+        <div id="rightBtn" class="touch-zone">▶</div>
       </div>
     </div>
   </div>
