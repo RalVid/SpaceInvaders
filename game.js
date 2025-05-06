@@ -494,11 +494,11 @@ function draw(){
 
   // Score
   const scoreText = `SCORE: ${pad4(score)}`;
-  ctx.fillText(scoreText, 70, 10);
+  ctx.fillText(scoreText, 90, 10);
 
   // Level
   const levelText = `LEVEL: ${wave}`;
-  const levelX = 60 + ctx.measureText(scoreText + "  ").width;
+  const levelX = 90 + ctx.measureText(scoreText + "  ").width;
   ctx.fillText(levelText, levelX, 10);
 
   // Lives
